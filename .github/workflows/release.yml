@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]*"
+      - "v[0-9]*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier que le tag correspond à la version du manifest
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/volets_intelligents/manifest.json'))['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "${version}" != "${tag}" ]; then
+            echo "Le tag ${GITHUB_REF_NAME} ne correspond pas à la version ${version} du manifest" >&2
+            exit 1
+          fi
+      - name: Créer la version GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes
