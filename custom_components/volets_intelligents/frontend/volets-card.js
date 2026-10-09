@@ -355,7 +355,8 @@ class VoletsIntelligentsCard extends HTMLElement {
       key, labels[key] || (SCENARIO_IDS.includes(key) ? this._t(`scenario.${key}`) : key),
     ]);
 
-    card.append(
+    // append() écrit « null » pour une valeur vide : on retire les parties absentes.
+    card.append(...[
       this._error ? el("div", { class: "notice c-red", role: "alert" },
         el("span", { text: this._t("card.interrupted", { error: this._error }) }), retry) : null,
       this._segmented(MODE_IDS.map((m) => [m, this._t(`mode.${m}`)]), st.mode, this._t("mode.group"),
@@ -364,7 +365,8 @@ class VoletsIntelligentsCard extends HTMLElement {
         (v) => this._command({ command: "set_scenario", value: v })),
       this._cmdError ? el("span", { class: "err", role: "alert", text: this._cmdError }) : null,
       el("div", {}, (st.covers || []).map((c) => this._row(c))),
-      (st.covers || []).length ? null : el("span", { class: "muted", text: this._t("card.noCovers") }));
+      (st.covers || []).length ? null : el("span", { class: "muted", text: this._t("card.noCovers") }),
+    ].filter(Boolean));
     this._root.replaceChildren(card);
   }
 
@@ -402,9 +404,13 @@ if (!customElements.get("volets-intelligents-card")) {
   customElements.define("volets-intelligents-card", VoletsIntelligentsCard);
 }
 
+// Le script peut être chargé deux fois (intégration + ressource ajoutée à la main) :
+// on ne s'inscrit dans la liste des cartes qu'une seule fois.
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "volets-intelligents-card",
-  name: "Volets Intelligents",
-  description: translate("fr", "card.description") + " / " + translate("en", "card.description"),
-});
+if (!window.customCards.some((card) => card.type === "volets-intelligents-card")) {
+  window.customCards.push({
+    type: "volets-intelligents-card",
+    name: "Volets Intelligents",
+    description: translate("fr", "card.description") + " / " + translate("en", "card.description"),
+  });
+}

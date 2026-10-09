@@ -5,7 +5,9 @@
     "sun",
     "weather"
   ],
-  "codeowners": [],
+  "codeowners": [
+    "@akoonet-homeassistant"
+  ],
   "config_flow": true,
   "dependencies": [
     "frontend",
@@ -13,11 +15,11 @@
     "panel_custom",
     "websocket_api"
   ],
-  "documentation": "https://github.com/JeromeRoseau/volets_intelligents",
+  "documentation": "https://github.com/akoonet-homeassistant/volets_intelligents",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/JeromeRoseau/volets_intelligents/issues",
+  "issue_tracker": "https://github.com/akoonet-homeassistant/volets_intelligents/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "2026.10.3"
+  "version": "2026.10.4"
 }

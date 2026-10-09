@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.10.4
+
+- Carte Lovelace : elle ne s'inscrit plus qu'une seule fois dans la liste des cartes quand son script est chargé deux fois (par l'intégration et par une ressource ajoutée à la main).
+- Carte Lovelace : correction de deux mots « null » qui s'affichaient dans la carte (au-dessus et en dessous de la liste des volets).
+- Manifest : `codeowners`, `documentation` et `issue_tracker` pointent vers le dépôt akoonet-homeassistant/volets_intelligents (`@akoonet-homeassistant`), utile pour la soumission au magasin HACS par défaut.
+
 ## 2026.10.3
 
 - Panneau : nouvel ordre des onglets : Tableau de bord, Scénarios, Volets, Façades, Réglages, Entités (README FR et EN alignés).
