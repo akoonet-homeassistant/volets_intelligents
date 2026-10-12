@@ -5,6 +5,7 @@
 - Carte Lovelace : les volets sont regroupés par façade. Chaque façade a un bandeau (nom, plage d'exposition du jour, mention « au soleil » et bordure orange quand elle est exposée), et ses volets sont en retrait sous un trait vertical. Les volets dont la façade est inconnue sont réunis sous « Autres volets ». Ce regroupement remplace la section « Soleil sur les façades » de la 2026.10.5.
 - Carte Lovelace : case à cocher « Façades repliables » en bas de la carte. Cochée, un clic sur le bandeau d'une façade replie ou déplie ses volets (le bandeau replié indique le nombre de volets et « protégé » si l'un l'est) ; décochée, tout reste déplié. Le choix et l'état de chaque façade sont mémorisés dans le navigateur.
 - Carte Lovelace : un clic (ou Entrée / Espace au clavier) sur le nom d'un volet ouvre la fenêtre de contrôle de son entité cover.
+- Documentation : le README (FR et EN) décrit la carte et montre ses captures d'écran.
 - Documentation : toutes les captures d'écran sont dans `docs/screenshots` (plus de sous-dossier `en`) ; les captures anglaises ont le suffixe `-en`.
 
 ## 2026.10.5

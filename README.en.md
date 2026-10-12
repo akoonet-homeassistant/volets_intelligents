@@ -422,6 +422,22 @@ type: custom:volets-intelligents-card
 title: Shutters
 ```
 
+The card lets you pick the mode and the scenario, and lists the shutters **grouped by facade**. Each facade header
+shows its sun exposure window for the day and flags the facade that is currently in the sun. In summer, a
+sun-protected shutter shows the latest time it will reopen (end of sun exposure on its facade). Clicking a shutter's
+name opens the control dialog of its entity.
+
+![Lovelace card](docs/screenshots/carte-facades-en.png)
+
+The **Collapsible facades** checkbox, at the bottom of the card, lets you fold or unfold a facade's shutters with a
+click on its header. The choice is remembered in the browser (per device).
+
+![Lovelace card, facades folded](docs/screenshots/carte-facades-repliees-en.png)
+
+![Lovelace card, one facade unfolded](docs/screenshots/carte-facades-repliables-en.png)
+
+The screenshots use demonstration data.
+
 ## User permissions
 
 Permissions follow Home Assistant's: the management panel is reserved for administrators. The Lovelace card

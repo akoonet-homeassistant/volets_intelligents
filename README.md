@@ -422,6 +422,22 @@ type: custom:volets-intelligents-card
 title: Volets
 ```
 
+La carte permet de choisir le mode et le scénario, et affiche les volets **regroupés par façade**. Le bandeau de
+chaque façade donne sa plage d'exposition du jour et signale la façade actuellement au soleil. En été, un volet
+protégé du soleil indique l'heure à laquelle il remonte au plus tard (fin de l'exposition de sa façade). Un clic sur
+le nom d'un volet ouvre la fenêtre de contrôle de son entité.
+
+![Carte Lovelace](docs/screenshots/carte-facades.png)
+
+La case **Façades repliables**, en bas de la carte, permet de replier ou déplier les volets d'une façade d'un clic
+sur son bandeau. Le choix est mémorisé dans le navigateur (propre à chaque appareil).
+
+![Carte Lovelace, façades repliées](docs/screenshots/carte-facades-repliees.png)
+
+![Carte Lovelace, une façade dépliée](docs/screenshots/carte-facades-repliables.png)
+
+Les captures utilisent des données de démonstration.
+
 ## Droits des utilisateurs
 
 Les droits suivent ceux de Home Assistant : le panneau de gestion est réservé aux administrateurs. La
