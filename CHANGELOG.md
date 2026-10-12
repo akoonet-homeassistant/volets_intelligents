@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.10.5
+
+- Carte Lovelace : les volets sont regroupés par façade. L'en-tête de chaque groupe donne la plage d'exposition du jour (par exemple « Ouest 14:35 – 20:25 ») et signale la façade actuellement au soleil. Les volets dont la façade est inconnue sont réunis sous « Autres volets ».
+- Carte Lovelace : un clic (ou Entrée / Espace au clavier) sur le nom d'un volet ouvre la fenêtre de contrôle de son entité cover.
+- Carte Lovelace, scénario Été : sous chaque volet protégé du soleil, l'heure de remontée au plus tard (fin de l'exposition de sa façade). Il peut remonter plus tôt si les températures redescendent sous les seuils de réouverture. Les heures sont celles de la maison.
+
 ## 2026.10.4
 
 - Carte Lovelace : elle ne s'inscrit plus qu'une seule fois dans la liste des cartes quand son script est chargé deux fois (par l'intégration et par une ressource ajoutée à la main).

@@ -24,6 +24,11 @@ const I18N = {
     "card.resume": "Reprendre",
     "card.pauseAria": "Mettre en pause {name}",
     "card.resumeAria": "Reprendre {name}",
+    "card.openAria": "Ouvrir le contrôle de {name}",
+    "card.other": "Autres volets",
+    "card.facadeNow": "au soleil",
+    "card.facadeNever": "pas de soleil aujourd'hui",
+    "card.reopenAt": "Remonte au plus tard vers {time}",
     "err.notInstalled": "L'intégration « Volets Intelligents » n'est pas installée ou n'est pas démarrée.",
     "err.unknown": "Erreur inconnue.",
     "err.unauthorized": "Vous n'avez pas le droit d'effectuer cette action",
@@ -64,6 +69,11 @@ const I18N = {
     "card.resume": "Resume",
     "card.pauseAria": "Pause {name}",
     "card.resumeAria": "Resume {name}",
+    "card.openAria": "Open controls for {name}",
+    "card.other": "Other shutters",
+    "card.facadeNow": "in the sun",
+    "card.facadeNever": "no sun today",
+    "card.reopenAt": "Reopens by {time} at the latest",
     "err.notInstalled": "The “Volets Intelligents” integration is not installed or not running.",
     "err.unknown": "Unknown error.",
     "err.unauthorized": "You are not allowed to perform this action",
@@ -180,10 +190,17 @@ button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline
 
 .row { display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid var(--divider-color, #e0e0e0); padding-top: 4px; }
 .row:first-of-type { border-top: 0; }
+.ghead + .row { border-top: 0; }
 .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--c); flex: none; }
 .name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name.link { cursor: pointer; border-radius: 6px; }
+.name.link:hover { background: var(--secondary-background-color, rgba(127,127,127,.12)); }
 .pos { white-space: nowrap; }
+.groups { display: flex; flex-direction: column; gap: 12px; }
+.group { display: flex; flex-direction: column; }
+.ghead { display: flex; align-items: center; gap: 10px; min-height: 32px; flex-wrap: wrap; }
+.ghead .now, .reopen { color: var(--c); font-weight: 500; }
 .btn {
   min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--divider-color, #ccc);
@@ -312,8 +329,9 @@ class VoletsIntelligentsCard extends HTMLElement {
   /** Signature des seules données affichées par la carte. */
   _viewKey(st) {
     if (!st) return "";
-    return JSON.stringify([st.mode, st.scenario, st.scenarios || null,
-      (st.covers || []).map((c) => [c.entity_id, c.name, c.status, c.reason, c.position, c.enabled, c.paused_until])]);
+    return JSON.stringify([st.mode, st.scenario, st.scenario_kind, st.scenarios || null,
+      Object.entries(st.facades || {}).map(([id, f]) => [id, f.name, f.exposed, f.windows, f.next_end]),
+      (st.covers || []).map((c) => [c.entity_id, c.name, c.facade, c.status, c.reason, c.position, c.enabled, c.paused_until])]);
   }
 
   async _command(payload) {
@@ -364,10 +382,42 @@ class VoletsIntelligentsCard extends HTMLElement {
       this._segmented(scenarios, st.scenario, this._t("scenario.group"),
         (v) => this._command({ command: "set_scenario", value: v })),
       this._cmdError ? el("span", { class: "err", role: "alert", text: this._cmdError }) : null,
-      el("div", {}, (st.covers || []).map((c) => this._row(c))),
+      this._groups(st),
       (st.covers || []).length ? null : el("span", { class: "muted", text: this._t("card.noCovers") }),
     ].filter(Boolean));
     this._root.replaceChildren(card);
+  }
+
+  /** HH:MM d'une date ISO, telle qu'envoyée par HA (heure de la maison, pas celle du navigateur). */
+  _hhmm(iso) {
+    const m = typeof iso === "string" ? /T(\d{2}:\d{2})/.exec(iso) : null;
+    return m ? m[1] : null;
+  }
+
+  /** Volets regroupés par façade : plage d'ensoleillement du jour en en-tête de chaque groupe. */
+  _groups(st) {
+    const covers = st.covers || [];
+    const facades = st.facades || {};
+    const groups = Object.entries(facades)
+      .map(([id, f]) => ({ id, facade: f, covers: covers.filter((c) => c.facade === id) }))
+      .filter((g) => g.covers.length);
+    const known = new Set(Object.keys(facades));
+    const others = covers.filter((c) => !known.has(c.facade));
+    if (others.length) groups.push({ id: "", facade: null, covers: others });
+    return el("div", { class: "groups" }, groups.map((g) => {
+      const windows = g.facade ? (g.facade.windows || []).map((w) => `${w.start}\u00a0–\u00a0${w.end}`) : [];
+      return el("div", { class: "group" },
+        el("div", { class: "ghead" },
+          g.facade ? el("span", {
+            class: `dot c-${g.facade.exposed ? "orange" : "grey"}`, role: "img",
+            "aria-label": g.facade.exposed ? this._t("card.facadeNow") : "",
+          }) : null,
+          el("strong", { class: "fname", text: g.facade ? (g.facade.name || g.id) : this._t("card.other") }),
+          g.facade ? el("span", { class: "muted small",
+            text: windows.length ? windows.join(" · ") : this._t("card.facadeNever") }) : null,
+          g.facade && g.facade.exposed ? el("span", { class: "small c-orange now", text: this._t("card.facadeNow") }) : null),
+        g.covers.map((c) => this._row(c, st)));
+    }));
   }
 
   _segmented(options, active, label, onPick) {
@@ -379,7 +429,22 @@ class VoletsIntelligentsCard extends HTMLElement {
       })));
   }
 
-  _row(c) {
+  /** Été : heure à laquelle un volet protégé par nous remonte au plus tard (fin du soleil sur sa façade). */
+  _reopenText(c, st) {
+    if (!st || st.scenario_kind !== "heat_protection" || c.status !== "shaded") return null;
+    const facade = (st.facades || {})[c.facade];
+    const time = facade && facade.exposed ? this._hhmm(facade.next_end) : null;
+    return time ? this._t("card.reopenAt", { time }) : null;
+  }
+
+  /** Ouvre la fenêtre de contrôle de l'entité (more-info de Home Assistant). */
+  _moreInfo(entityId) {
+    this.dispatchEvent(new CustomEvent("hass-more-info", {
+      bubbles: true, composed: true, detail: { entityId },
+    }));
+  }
+
+  _row(c, st) {
     const known = c.status in STATUS_COLORS;
     const label = known ? this._t(`status.${c.status}`) : String(c.status);
     const color = known ? STATUS_COLORS[c.status] : "grey";
@@ -387,9 +452,17 @@ class VoletsIntelligentsCard extends HTMLElement {
     const name = c.name || c.entity_id;
     return el("div", { class: "row" },
       el("span", { class: `dot c-${color}`, title: label, role: "img", "aria-label": label }),
-      el("div", { class: "name" },
+      el("div", {
+        class: "name link", role: "button", tabindex: "0",
+        "aria-label": this._t("card.openAria", { name }),
+        onclick: () => this._moreInfo(c.entity_id),
+        onkeydown: (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); this._moreInfo(c.entity_id); }
+        },
+      },
         el("span", { text: name }),
-        el("span", { class: "muted small", title: c.reason || "", text: label })),
+        el("span", { class: "muted small", title: c.reason || "", text: label }),
+        this._reopenText(c, st) ? el("span", { class: "small c-orange reopen", text: this._reopenText(c, st) }) : null),
       el("span", { class: "pos muted", text: typeof c.position === "number" ? `${c.position}\u00a0%` : "—" }),
       el("button", {
         class: "btn", type: "button", text: paused ? this._t("card.resume") : this._t("card.pause"),
