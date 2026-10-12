@@ -26,6 +26,11 @@ const I18N = {
     "card.resumeAria": "Reprendre {name}",
     "card.openAria": "Ouvrir le contrôle de {name}",
     "card.other": "Autres volets",
+    "card.collapsible": "Façades repliables",
+    "card.count": "{n} volets",
+    "card.count1": "1 volet",
+    "card.protected": "protégé",
+    "card.toggleAria": "Afficher ou masquer les volets de {name}",
     "card.facadeNow": "au soleil",
     "card.facadeNever": "pas de soleil aujourd'hui",
     "card.reopenAt": "Remonte au plus tard vers {time}",
@@ -71,6 +76,11 @@ const I18N = {
     "card.resumeAria": "Resume {name}",
     "card.openAria": "Open controls for {name}",
     "card.other": "Other shutters",
+    "card.collapsible": "Collapsible facades",
+    "card.count": "{n} shutters",
+    "card.count1": "1 shutter",
+    "card.protected": "protected",
+    "card.toggleAria": "Show or hide the shutters of {name}",
     "card.facadeNow": "in the sun",
     "card.facadeNever": "no sun today",
     "card.reopenAt": "Reopens by {time} at the latest",
@@ -190,16 +200,25 @@ button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline
 
 .row { display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid var(--divider-color, #e0e0e0); padding-top: 4px; }
 .row:first-of-type { border-top: 0; }
-.ghead + .row { border-top: 0; }
+.gbody > .row:first-child { border-top: 0; }
 .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--c); flex: none; }
 .name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .name.link { cursor: pointer; border-radius: 6px; }
 .name.link:hover { background: var(--secondary-background-color, rgba(127,127,127,.12)); }
 .pos { white-space: nowrap; }
-.groups { display: flex; flex-direction: column; gap: 12px; }
-.group { display: flex; flex-direction: column; }
-.ghead { display: flex; align-items: center; gap: 10px; min-height: 32px; flex-wrap: wrap; }
+.groups { display: flex; flex-direction: column; gap: 16px; }
+.group { display: flex; flex-direction: column; gap: 4px; }
+.ghead {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; flex-wrap: wrap;
+  padding: 4px 10px; border-radius: 8px; border-left: 4px solid var(--c);
+  background: var(--secondary-background-color, rgba(127, 127, 127, .12));
+}
+.ghead .fname { font-size: 16px; }
+.ghead.fold { cursor: pointer; user-select: none; }
+.ghead .chev { width: 14px; color: var(--secondary-text-color, #727272); }
+.gbody { margin-left: 12px; padding-left: 12px; border-left: 2px solid var(--divider-color, #e0e0e0); }
+.opt { display: flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; }
 .ghead .now, .reopen { color: var(--c); font-weight: 500; }
 .btn {
   min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 8px; cursor: pointer;
@@ -220,6 +239,9 @@ class VoletsIntelligentsCard extends HTMLElement {
     this._error = null; // erreur d'abonnement
     this._cmdError = null; // erreur de la dernière commande
     this._busy = false;
+    this._collapsible = this._load("collapsible") === true;
+    this._collapsed = new Set(Array.isArray(this._load("collapsed")) ? this._load("collapsed") : []);
+    this._focusSel = null;
     this._unsub = null;
     this._subGen = 0;
     this._started = false;
@@ -383,15 +405,58 @@ class VoletsIntelligentsCard extends HTMLElement {
         (v) => this._command({ command: "set_scenario", value: v })),
       this._cmdError ? el("span", { class: "err", role: "alert", text: this._cmdError }) : null,
       this._groups(st),
+      (st.covers || []).length ? this._option() : null,
       (st.covers || []).length ? null : el("span", { class: "muted", text: this._t("card.noCovers") }),
     ].filter(Boolean));
     this._root.replaceChildren(card);
+    if (this._focusSel) {
+      const target = this._root.querySelector(this._focusSel);
+      this._focusSel = null;
+      if (target) target.focus();
+    }
   }
 
   /** HH:MM d'une date ISO, telle qu'envoyée par HA (heure de la maison, pas celle du navigateur). */
   _hhmm(iso) {
     const m = typeof iso === "string" ? /T(\d{2}:\d{2})/.exec(iso) : null;
     return m ? m[1] : null;
+  }
+
+  /** Préférences d'affichage propres à ce navigateur (sans effet si le stockage est indisponible). */
+  _load(key) {
+    try {
+      return JSON.parse(localStorage.getItem(`volets-intelligents-card:${key}`));
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  _save(key, value) {
+    try {
+      localStorage.setItem(`volets-intelligents-card:${key}`, JSON.stringify(value));
+    } catch (_err) {
+      /* stockage indisponible : la préférence ne sera pas conservée */
+    }
+  }
+
+  _setCollapsible(on) {
+    this._collapsible = on;
+    this._save("collapsible", on);
+    // Au passage en mode repliable, tout démarre replié (puis le choix de chaque façade est retenu).
+    if (on) {
+      this._collapsed = new Set(Object.keys((this._status && this._status.facades) || {}).concat([""]));
+      this._save("collapsed", [...this._collapsed]);
+    }
+    this._focusSel = ".opt input";
+    this._render();
+  }
+
+  _toggleGroup(id) {
+    if (this._collapsed.has(id)) this._collapsed.delete(id);
+    else this._collapsed.add(id);
+    this._save("collapsed", [...this._collapsed]);
+    this._focusSel = `.ghead[data-id="${id}"]`;
+    this._render();
   }
 
   /** Volets regroupés par façade : plage d'ensoleillement du jour en en-tête de chaque groupe. */
@@ -405,19 +470,47 @@ class VoletsIntelligentsCard extends HTMLElement {
     const others = covers.filter((c) => !known.has(c.facade));
     if (others.length) groups.push({ id: "", facade: null, covers: others });
     return el("div", { class: "groups" }, groups.map((g) => {
-      const windows = g.facade ? (g.facade.windows || []).map((w) => `${w.start}\u00a0–\u00a0${w.end}`) : [];
+      const f = g.facade;
+      const title = f ? (f.name || g.id) : this._t("card.other");
+      const windows = f ? (f.windows || []).map((w) => `${w.start}\u00a0–\u00a0${w.end}`) : [];
+      const folded = this._collapsible && this._collapsed.has(g.id);
+      const shaded = g.covers.some((c) => c.status === "shaded");
+      const headProps = {
+        class: `ghead c-${f && f.exposed ? "orange" : "grey"}${this._collapsible ? " fold" : ""}`,
+        "data-id": g.id,
+      };
+      if (this._collapsible) {
+        Object.assign(headProps, {
+          role: "button", tabindex: "0", "aria-expanded": String(!folded),
+          "aria-label": this._t("card.toggleAria", { name: title }),
+          onclick: () => this._toggleGroup(g.id),
+          onkeydown: (ev) => {
+            if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); this._toggleGroup(g.id); }
+          },
+        });
+      }
       return el("div", { class: "group" },
-        el("div", { class: "ghead" },
-          g.facade ? el("span", {
-            class: `dot c-${g.facade.exposed ? "orange" : "grey"}`, role: "img",
-            "aria-label": g.facade.exposed ? this._t("card.facadeNow") : "",
-          }) : null,
-          el("strong", { class: "fname", text: g.facade ? (g.facade.name || g.id) : this._t("card.other") }),
-          g.facade ? el("span", { class: "muted small",
+        el("div", headProps,
+          this._collapsible ? el("span", { class: "chev", "aria-hidden": "true", text: folded ? "▸" : "▾" }) : null,
+          el("strong", { class: "fname", text: title }),
+          f ? el("span", { class: "muted small",
             text: windows.length ? windows.join(" · ") : this._t("card.facadeNever") }) : null,
-          g.facade && g.facade.exposed ? el("span", { class: "small c-orange now", text: this._t("card.facadeNow") }) : null),
-        g.covers.map((c) => this._row(c, st)));
+          f && f.exposed ? el("span", { class: "small now", text: this._t("card.facadeNow") }) : null,
+          folded ? el("span", { class: "small muted count", text: g.covers.length === 1 ? this._t("card.count1") : this._t("card.count", { n: g.covers.length }) }) : null,
+          folded && shaded ? el("span", { class: "small c-orange now", text: this._t("card.protected") }) : null),
+        folded ? null : el("div", { class: "gbody" }, g.covers.map((c) => this._row(c, st))));
     }));
+  }
+
+  /** Case à cocher : façades repliables (variante C) ou toujours dépliées (variante A). */
+  _option() {
+    const id = "opt-collapsible";
+    return el("label", { class: "opt muted small", for: id },
+      el("input", {
+        type: "checkbox", id, checked: this._collapsible,
+        onchange: (ev) => this._setCollapsible(ev.target.checked),
+      }),
+      this._t("card.collapsible"));
   }
 
   _segmented(options, active, label, onPick) {

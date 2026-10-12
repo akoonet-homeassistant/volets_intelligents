@@ -172,27 +172,27 @@ The screenshots below use demonstration data.
 
 ### Dashboard
 
-![Dashboard](docs/screenshots/en/dashboard.png)
+![Dashboard](docs/screenshots/dashboard-en.png)
 
 ### Scenarios
 
-![Scenarios](docs/screenshots/en/scenarios.png)
+![Scenarios](docs/screenshots/scenarios-en.png)
 
 ### Shutters
 
-![Shutters](docs/screenshots/en/shutters.png)
+![Shutters](docs/screenshots/shutters-en.png)
 
 ### Facades
 
-![Facades](docs/screenshots/en/facades.png)
+![Facades](docs/screenshots/facades-en.png)
 
 ### Settings
 
-![Settings](docs/screenshots/en/settings.png)
+![Settings](docs/screenshots/settings-en.png)
 
 ### Entities
 
-![Entities](docs/screenshots/en/entities.png)
+![Entities](docs/screenshots/entities-en.png)
 
 ### How the sun is computed
 

@@ -1,9 +1,15 @@
 # Changelog
 
+## 2026.10.6
+
+- Carte Lovelace : les volets sont regroupés par façade. Chaque façade a un bandeau (nom, plage d'exposition du jour, mention « au soleil » et bordure orange quand elle est exposée), et ses volets sont en retrait sous un trait vertical. Les volets dont la façade est inconnue sont réunis sous « Autres volets ». Ce regroupement remplace la section « Soleil sur les façades » de la 2026.10.5.
+- Carte Lovelace : case à cocher « Façades repliables » en bas de la carte. Cochée, un clic sur le bandeau d'une façade replie ou déplie ses volets (le bandeau replié indique le nombre de volets et « protégé » si l'un l'est) ; décochée, tout reste déplié. Le choix et l'état de chaque façade sont mémorisés dans le navigateur.
+- Carte Lovelace : un clic (ou Entrée / Espace au clavier) sur le nom d'un volet ouvre la fenêtre de contrôle de son entité cover.
+- Documentation : toutes les captures d'écran sont dans `docs/screenshots` (plus de sous-dossier `en`) ; les captures anglaises ont le suffixe `-en`.
+
 ## 2026.10.5
 
-- Carte Lovelace : les volets sont regroupés par façade. L'en-tête de chaque groupe donne la plage d'exposition du jour (par exemple « Ouest 14:35 – 20:25 ») et signale la façade actuellement au soleil. Les volets dont la façade est inconnue sont réunis sous « Autres volets ».
-- Carte Lovelace : un clic (ou Entrée / Espace au clavier) sur le nom d'un volet ouvre la fenêtre de contrôle de son entité cover.
+- Carte Lovelace : nouvelle section « Soleil sur les façades » avec la plage d'exposition du jour de chaque façade (par exemple « Ouest 14:35 – 20:25 »). La façade actuellement au soleil est signalée.
 - Carte Lovelace, scénario Été : sous chaque volet protégé du soleil, l'heure de remontée au plus tard (fin de l'exposition de sa façade). Il peut remonter plus tôt si les températures redescendent sous les seuils de réouverture. Les heures sont celles de la maison.
 
 ## 2026.10.4
