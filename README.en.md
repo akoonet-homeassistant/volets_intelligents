@@ -415,7 +415,7 @@ tap_action:
 
 ## Lovelace card
 
-The card is loaded automatically. Add it from the dashboard editor ("Volets Intelligents") or in YAML:
+The card is loaded automatically: the integration registers it as a Lovelace resource (storage mode; in YAML mode, add the resource `/volets_intelligents_static/volets-card.js` of type module). Add it from the dashboard editor ("Volets Intelligents") or in YAML:
 
 ```yaml
 type: custom:volets-intelligents-card

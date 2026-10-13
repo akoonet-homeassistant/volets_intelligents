@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.10.7
+
+- Carte Lovelace : l'intégration déclare maintenant la carte comme ressource Lovelace (mode stockage), en plus du chargement qu'elle faisait déjà. Corrige « Custom element doesn't exist: volets-intelligents-card » sur les installations où le script ajouté par l'intégration n'est pas chargé. La ressource est mise à jour à chaque nouvelle version, reprise si vous l'aviez ajoutée à la main (pas de doublon) et retirée quand l'intégration est supprimée. En mode YAML, rien n'est écrit : ajoutez la ressource vous-même (`/volets_intelligents_static/volets-card.js`, type module).
+
 ## 2026.10.6
 
 - Carte Lovelace : les volets sont regroupés par façade. Chaque façade a un bandeau (nom, plage d'exposition du jour, mention « au soleil » et bordure orange quand elle est exposée), et ses volets sont en retrait sous un trait vertical. Les volets dont la façade est inconnue sont réunis sous « Autres volets ». Ce regroupement remplace la section « Soleil sur les façades » de la 2026.10.5.

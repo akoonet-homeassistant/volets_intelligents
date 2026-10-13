@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import frontend as ha_frontend
@@ -91,10 +92,67 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.options.get(CONF_SHOW_SIDEBAR, True),
         bool(entry.options.get(CONF_ALLOWED_USERS)),
     )
+    await _async_register_card_resource(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     await manager.async_start()
     return True
+
+
+def _lovelace_resources(hass: HomeAssistant) -> Any:
+    """Collection des ressources Lovelace (None si Lovelace n'est pas disponible)."""
+    data = hass.data.get("lovelace")
+    if data is None:
+        return None
+    if isinstance(data, dict):  # anciennes versions de Home Assistant
+        return data.get("resources")
+    return getattr(data, "resources", None)
+
+
+def _card_resource_items(resources: Any) -> list[dict[str, Any]]:
+    """Ressources déjà déclarées pour le script de la carte (avec ou sans numéro de version)."""
+    base = f"{URL_BASE}/{CARD_JS}"
+    return [
+        item for item in resources.async_items() if str(item.get("url", "")).split("?")[0] == base
+    ]
+
+
+async def _async_register_card_resource(hass: HomeAssistant) -> None:
+    """Déclare la carte comme ressource Lovelace (mode stockage), en plus du chargement par l'intégration.
+
+    Certaines installations ne chargent pas le script ajouté par l'intégration : la carte est alors
+    « Custom element doesn't exist ». Une ressource Lovelace est chargée de façon fiable. Le script de la carte
+    ne s'enregistre qu'une seule fois : la double déclaration est sans effet. Sans effet aussi en mode YAML.
+    """
+    resources = _lovelace_resources(hass)
+    if resources is None or not hasattr(resources, "async_create_item"):
+        return
+    url = f"{URL_BASE}/{CARD_JS}?v={VERSION}"
+    try:
+        if not getattr(resources, "loaded", True):
+            await resources.async_load()
+            resources.loaded = True
+        existing = _card_resource_items(resources)
+        if any(item.get("url") == url for item in existing):
+            return
+        if existing:
+            await resources.async_update_item(existing[0]["id"], {"res_type": "module", "url": url})
+        else:
+            await resources.async_create_item({"res_type": "module", "url": url})
+    except Exception:  # noqa: BLE001 - la carte reste chargée par l'intégration
+        _LOGGER.warning("Impossible de déclarer la carte comme ressource Lovelace", exc_info=True)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Intégration supprimée : retire la ressource de la carte (pas lors d'un simple rechargement)."""
+    resources = _lovelace_resources(hass)
+    if resources is None or not hasattr(resources, "async_delete_item"):
+        return
+    try:
+        for item in _card_resource_items(resources):
+            await resources.async_delete_item(item["id"])
+    except Exception:  # noqa: BLE001
+        _LOGGER.debug("Ressource de la carte non retirée", exc_info=True)
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:

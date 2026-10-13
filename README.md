@@ -414,7 +414,7 @@ tap_action:
 
 ## Carte Lovelace
 
-La carte est chargée automatiquement. Ajoutez-la depuis l'éditeur de tableau de bord
+La carte est chargée automatiquement : l'intégration la déclare comme ressource Lovelace (mode stockage ; en mode YAML, ajoutez la ressource `/volets_intelligents_static/volets-card.js` de type module). Ajoutez-la depuis l'éditeur de tableau de bord
 (« Volets Intelligents ») ou en YAML :
 
 ```yaml
