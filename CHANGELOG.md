@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.10.9
+
+- Entité « Volets scénario » : le sélecteur affiche maintenant le nom que vous avez saisi pour chaque scénario (« Absents » au lieu de « Vacances » après renommage), dans toutes les cartes Home Assistant (vue Volets, tuile, entités). Les options et l'état de l'entité sont ces noms. `select.select_option` accepte aussi les anciennes clés (`summer`, `winter`, `vacation`, `off`), mais une automatisation ou un template qui teste l'état `vacation` doit être mise à jour avec le nouveau nom. Deux scénarios de même nom sont distingués par leur clé entre parenthèses.
+
 ## 2026.10.8
 
 - Panneau : un scénario renommé (champ « Libellé » de l'onglet Scénarios) garde son nouveau nom partout. Le titre de sa fiche dans l'onglet Scénarios, l'état des scénarios dans l'onglet Entités et la liste des valeurs possibles affichaient encore le nom d'origine (par exemple « Vacances » après renommage en « Absents »).

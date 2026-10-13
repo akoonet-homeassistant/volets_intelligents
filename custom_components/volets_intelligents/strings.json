@@ -35,14 +35,6 @@
           "off": "Arrêté"
         }
       },
-      "scenario": {
-        "state": {
-          "summer": "Été",
-          "winter": "Hiver",
-          "vacation": "Vacances",
-          "off": "Désactivé"
-        }
-      },
       "window_end_mode": {
         "state": {
           "fixed": "Heure fixe",

@@ -232,7 +232,7 @@ nom de votre volet.
 | Entité | Type | Valeurs | Usage |
 |---|---|---|---|
 | `select.volets_mode` | select | `auto`, `manual`, `off` (affichés Automatique, Manuel, Arrêté) | Mode global. **Automatique** : le moteur décide et envoie les ordres. **Manuel** : aucun ordre envoyé (les volets affichent « Mode manuel »). **Arrêté** : aucune décision ni ordre (la sécurité vent reste prioritaire). Modifiable depuis un tableau de bord. |
-| `select.volets_scenario` | select | `summer`, `winter`, `vacation`, `off` (affichés Été, Hiver, Vacances, Désactivé) | Scénario actif. Modifiable, sauf quand le scénario automatique selon le mois est activé. |
+| `select.volets_scenario` | select | Nom de chaque scénario (par défaut Été, Hiver, Vacances, Désactivé ; suit le champ « Libellé ») | Scénario actif. `select_option` accepte aussi les clés `summer`, `winter`, `vacation`, `off`. Modifiable, sauf quand le scénario automatique selon le mois est activé. |
 | `sensor.volets_temperature_exterieure_effective` | sensor (°C) | nombre, ou indisponible | Température extérieure réellement utilisée par les règles (maximum entre la mesure et la température ressentie si l'option est activée). |
 
 ### Plage active

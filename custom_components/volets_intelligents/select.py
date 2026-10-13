@@ -5,12 +5,12 @@ from __future__ import annotations
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import MODES
 from .entity import VoletsEntity
 from .manager import VoletsManager
-from .schema import SCENARIO_KEYS
 
 
 async def async_setup_entry(
@@ -47,10 +47,8 @@ class ModeSelect(VoletsEntity, SelectEntity):
 
 
 class ScenarioSelect(VoletsEntity, SelectEntity):
-    """Scénario actif (été, hiver, vacances, désactivé)."""
+    """Scénario actif : les options portent le nom saisi pour chaque scénario (ex. « Absents »)."""
 
-    _attr_translation_key = "scenario"
-    _attr_options = list(SCENARIO_KEYS)
     _attr_icon = "mdi:weather-sunny"
     _attr_name = "Volets scénario"
 
@@ -58,12 +56,37 @@ class ScenarioSelect(VoletsEntity, SelectEntity):
         super().__init__(manager, entry_id)
         self._attr_unique_id = f"{entry_id}_scenario"
 
+    def _labels(self) -> dict[str, str]:
+        """Clé -> libellé affiché ; un libellé en double est suivi de la clé pour rester unique."""
+        raw = {
+            key: str(conf.get("label") or "").strip() or key
+            for key, conf in self.manager.config["scenarios"].items()
+        }
+        return {
+            key: label if list(raw.values()).count(label) == 1 else f"{label} ({key})"
+            for key, label in raw.items()
+        }
+
     @property
-    def current_option(self) -> str:
-        return self.manager.status.get("scenario", self.manager.scenario)
+    def options(self) -> list[str]:
+        return list(self._labels().values())
+
+    @property
+    def current_option(self) -> str | None:
+        labels = self._labels()
+        return labels.get(self.manager.status.get("scenario", self.manager.scenario))
 
     async def async_select_option(self, option: str) -> None:
-        await self.manager.async_set_scenario(option)
+        """Accepte le nom affiché ou, pour les automatisations existantes, la clé (summer, vacation…)."""
+        labels = self._labels()
+        for key, label in labels.items():
+            if option == label:
+                await self.manager.async_set_scenario(key)
+                return
+        if option in labels:
+            await self.manager.async_set_scenario(option)
+            return
+        raise HomeAssistantError(f"Scénario inconnu : {option}")
 
 
 class WindowEndModeSelect(VoletsEntity, SelectEntity):

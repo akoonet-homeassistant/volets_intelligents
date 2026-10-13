@@ -35,14 +35,6 @@
           "off": "Stopped"
         }
       },
-      "scenario": {
-        "state": {
-          "summer": "Summer",
-          "winter": "Winter",
-          "vacation": "Vacation",
-          "off": "Disabled"
-        }
-      },
       "window_end_mode": {
         "state": {
           "fixed": "Fixed time",

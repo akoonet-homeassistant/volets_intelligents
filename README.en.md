@@ -231,7 +231,7 @@ examples, `bureau` is to be replaced by your shutter's name.
 | Entity | Type | Values | Usage |
 |---|---|---|---|
 | `select.volets_mode` | select | `auto`, `manual`, `off` (displayed Automatic, Manual, Off) | Global mode. **Automatic**: the engine decides and sends the commands. **Manual**: no command sent (shutters show "Manual mode"). **Off**: no decision or command (wind safety stays a priority). Editable from a dashboard. |
-| `select.volets_scenario` | select | `summer`, `winter`, `vacation`, `off` (displayed Summer, Winter, Vacation, Disabled) | Active scenario. Editable, except when the automatic month-based scenario is enabled. |
+| `select.volets_scenario` | select | Name of each scenario (default Summer, Winter, Vacation, Disabled; follows the "Label" field) | Active scenario. `select_option` also accepts the keys `summer`, `winter`, `vacation`, `off`. Editable, except when the automatic month-based scenario is enabled. |
 | `sensor.volets_temperature_exterieure_effective` | sensor (°C) | number, or unavailable | Outdoor temperature actually used by the rules (maximum of the measurement and the feels-like temperature if the option is enabled). |
 
 ### Active window
