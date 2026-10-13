@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.10.8
+
+- Panneau : un scénario renommé (champ « Libellé » de l'onglet Scénarios) garde son nouveau nom partout. Le titre de sa fiche dans l'onglet Scénarios, l'état des scénarios dans l'onglet Entités et la liste des valeurs possibles affichaient encore le nom d'origine (par exemple « Vacances » après renommage en « Absents »).
+
 ## 2026.10.7
 
 - Carte Lovelace : l'intégration déclare maintenant la carte comme ressource Lovelace (mode stockage), en plus du chargement qu'elle faisait déjà. Corrige « Custom element doesn't exist: volets-intelligents-card » sur les installations où le script ajouté par l'intégration n'est pas chargé. La ressource est mise à jour à chaque nouvelle version, reprise si vous l'aviez ajoutée à la main (pas de doublon) et retirée quand l'intégration est supprimée. En mode YAML, rien n'est écrit : ajoutez la ressource vous-même (`/volets_intelligents_static/volets-card.js`, type module).

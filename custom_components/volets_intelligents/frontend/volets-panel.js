@@ -2201,8 +2201,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
   _scenarioToggles(cover) {
     const keys = ["summer", "winter", "vacation"];
     return el("div", { class: "chips" }, keys.map((key) => {
-      const conf = this._draft.scenarios && this._draft.scenarios[key];
-      const label = (conf && conf.label) || this._t(`scenario.${key}`);
+      const label = this._scenarioName(key);
       const btn = el("button", { class: "chip-toggle", type: "button", text: label,
         "aria-pressed": String(cover.allow_open_closed_in.includes(key)) });
       btn.addEventListener("click", () => {
@@ -2435,6 +2434,16 @@ class VoletsIntelligentsPanel extends HTMLElement {
     return false;
   }
 
+  /** Nom d'un scénario : le libellé que vous avez saisi, sinon le nom d'origine. */
+  _scenarioName(key) {
+    const sources = [this._draft && this._draft.scenarios, this._config && this._config.scenarios];
+    for (const scenarios of sources) {
+      const conf = scenarios && scenarios[key];
+      if (conf && typeof conf.label === "string" && conf.label.trim()) return conf.label;
+    }
+    return SCENARIO_IDS.includes(key) ? this._t(`scenario.${key}`) : key;
+  }
+
   /* ---------- Onglet « Scénarios » ---------- */
 
   _scenariosView() {
@@ -2482,7 +2491,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
         this._toggle(sc, "block_open_alarm_window", this._t("scn.blockAlarmWindow"), this._t("scn.blockAlarmWindowHelp"))]);
     }
     return el("section", { class: "card" },
-      el("h2", { text: SCENARIO_IDS.includes(key) ? this._t(`scenario.${key}`) : key }),
+      el("h2", { text: this._scenarioName(key) }),
       el("div", { class: "fields" },
         this._field(this._t("scn.label"), this._text(sc, "label", { nullable: false })),
         el("div", { class: "field" },
@@ -2579,7 +2588,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
     if (v === "unavailable" || v === "unknown") return v;
     if (kind === "status") return this._statusLabel(v);
     if (kind === "mode" && MODE_IDS.includes(v)) return this._t(`mode.${v}`);
-    if (kind === "scenario" && SCENARIO_IDS.includes(v)) return this._t(`scenario.${v}`);
+    if (kind === "scenario") return this._scenarioName(v);
     if (kind === "switch") return v === "on" ? "on" : "off";
     if (kind === "temp") return this._num(Number(v), "°C");
     if (kind === "bool") return v === "on" ? this._t("ent.on") : this._t("ent.off");
@@ -2675,7 +2684,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       el("h3", { text: this._t("ent.valuesMode") }),
       el("ul", { class: "vals" }, MODE_IDS.map((m) => el("li", {}, el("code", { text: m }), ` : ${this._t(`mode.${m}`)} — ${this._t(`mode.${m}.desc`)}`))),
       el("h3", { text: this._t("ent.valuesScenario") }),
-      el("ul", { class: "vals" }, SCENARIO_IDS.map((k) => el("li", {}, el("code", { text: k }), ` : ${this._t(`scenario.${k}`)} — ${this._t(`scenario.${k}.desc`)}`))),
+      el("ul", { class: "vals" }, SCENARIO_IDS.map((k) => el("li", {}, el("code", { text: k }), ` : ${this._scenarioName(k)} — ${this._t(`scenario.${k}.desc`)}`))),
       el("h3", { text: this._t("ent.attrs") }),
       el("ul", { class: "vals" }, attrNames.map((n) => el("li", {}, el("code", { text: n }), ` : ${this._t(`ent.attr.${n}`)}`))));
 
