@@ -1150,6 +1150,7 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; padding-bottom: 96px; }
   background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0; }
 .fsec legend { padding: 0 8px; font-weight: 500; font-size: 15px; color: var(--primary-color, #03a9f4); }
 .fsec-help { margin: 0 0 10px; }
+.subrow { grid-column: 1 / -1; align-items: start; }
 .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 16px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row > input, .row > select { flex: 1 1 180px; }
@@ -2348,15 +2349,17 @@ class VoletsIntelligentsPanel extends HTMLElement {
             this._entityChips(cover.window_entities, { list: "vi-dl-binary_sensor", placeholder: "binary_sensor.…", label: this._t("covers.windowSensor") }),
             null, true),
           this._toggle(cover, "block_close_if_open", this._t("covers.blockClose"))),
-        this._section(this._t("covers.secSchedule"), null,
-          this._toggle(cover, "schedule_open_enabled", this._t("covers.scheduleOpen"), this._t("covers.scheduleHelp")),
-          this._toggle(cover, "schedule_close_enabled", this._t("covers.scheduleClose"), null, syncWindowAction),
-          (windowActionField = this._field(this._t("covers.schedWindow"),
-            this._select(cover, "window_open_action", [["block", this._t("covers.winBlock")],
-              ["close", this._t("covers.winClose")], ["button", this._t("covers.winButton")],
-              ["position", this._t("covers.winPosition")]], syncWindowAction),
-            this._t("covers.schedWindowHelp"))),
-          windowButtonField, windowPositionField),
+        this._section(this._t("covers.secSchedule"), this._t("covers.scheduleHelp"),
+          el("div", { class: "fields subrow" },
+            this._toggle(cover, "schedule_open_enabled", this._t("covers.scheduleOpen")),
+            this._toggle(cover, "schedule_close_enabled", this._t("covers.scheduleClose"), null, syncWindowAction)),
+          el("div", { class: "fields subrow" },
+            (windowActionField = this._field(this._t("covers.schedWindow"),
+              this._select(cover, "window_open_action", [["block", this._t("covers.winBlock")],
+                ["close", this._t("covers.winClose")], ["button", this._t("covers.winButton")],
+                ["position", this._t("covers.winPosition")]], syncWindowAction),
+              this._t("covers.schedWindowHelp"))),
+            windowButtonField, windowPositionField)),
         this._section(this._t("covers.secWind"), null,
           windToggle, windActionField)));
     card.addEventListener("toggle", () => {

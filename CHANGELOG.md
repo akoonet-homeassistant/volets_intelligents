@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.10.14
+
+- Fiche d'un volet, section « Horaires d'ouverture et de fermeture » : le choix « Fermeture du soir si une fenêtre est ouverte » et le bouton à presser (ou la position en %) sont maintenant sur la même ligne. Le texte d'aide sur l'indépendance de l'ouverture et de la fermeture est placé en haut de la section.
+
 ## 2026.10.13
 
 - Ouverture du matin et fermeture du soir horaires désactivables **séparément, volet par volet** : la case unique « Ouverture / fermeture horaires » de la fiche du volet devient « Ouverture du matin horaire » et « Fermeture du soir horaire ». Le choix « Fermeture du soir si une fenêtre est ouverte » n'apparaît que si la fermeture est cochée. Le réglage global (interrupteur `switch.volets_horaires`) reste unique.
