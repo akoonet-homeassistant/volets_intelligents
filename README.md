@@ -76,8 +76,9 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
 - Les horaires sont indépendants de la plage active, mais **coupés par le scénario « Désactivé »**. Ils sont
   aussi ignorés quand le mode global est « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
   prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
-  même après un redémarrage de Home Assistant. Un volet non géré (`switch.volets_<nom>_auto` sur `off`) ignore
-  aussi les horaires. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
+  même après un redémarrage de Home Assistant. Les horaires sont autonomes : l'interrupteur `switch.volets_<nom>_auto` (protection
+  solaire) n'agit que sur la protection solaire, l'ouverture du matin et la fermeture du soir de chaque volet ont
+  chacune leur interrupteur et continuent de fonctionner même si la protection solaire est coupée. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
   remonter un volet fermé à 100 % ».
 - **Gain solaire** : après la fermeture horaire du soir, un scénario de gain solaire (hiver) n'ouvre plus le volet
   jusqu'à l'ouverture du matin.
@@ -114,8 +115,7 @@ demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenc
 
 ### Pilotage de chaque volet
 
-- **Bouton « Auto » par volet** : dans le tableau de bord du panneau, un clic active ou désactive la gestion
-  automatique d'un volet. C'est l'équivalent de l'entité `switch.volets_*_auto`.
+- **Bouton « Auto » par volet** : dans le tableau de bord du panneau, un clic active ou désactive la **protection solaire** d'un volet. C'est l'équivalent de l'entité `switch.volets_*_auto`. L'ouverture et la fermeture horaires se règlent séparément (`switch.volets_*_horaire_ouverture` et `switch.volets_*_horaire_fermeture`).
 - **Position voulue par volet** : chaque volet a sa propre position de protection (pourcentage,
   bouton « position favorite » ou fermeture complète).
 - **Pause automatique après action manuelle** : si vous bougez un volet à la main, il est laissé
@@ -367,7 +367,7 @@ Valeurs du statut (`sensor.volets_<nom>_statut`) :
 | `mode_manual` | Mode manuel | Le mode global est « manuel ». |
 | `mode_off` | Arrêté | Le mode global est « arrêté ». |
 | `scenario_off` | Scénario désactivé | Le scénario actif ne commande aucun volet (horaires compris). |
-| `disabled` | Désactivé | Volet non géré (interrupteur sur `off`). |
+| `disabled` | Désactivé | Protection solaire coupée pour ce volet (interrupteur sur `off`) ; les horaires restent actifs s'ils sont cochés. |
 | `unavailable` | Indisponible | L'entité volet est indisponible. |
 
 Attributs de `sensor.volets_<nom>_statut` :

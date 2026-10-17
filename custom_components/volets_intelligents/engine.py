@@ -388,9 +388,32 @@ def decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env) 
     return decision
 
 
+def _schedule_only(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env) -> Decision:
+    """Volet dont la protection solaire est désactivée : seuls les horaires peuvent agir.
+
+    L'ouverture du matin et la fermeture du soir ont chacune leur propre réglage et restent
+    actives (si elles sont cochées) même quand la protection solaire est coupée.
+    """
+    off = Decision(ST_DISABLED, "La protection solaire est désactivée pour ce volet")
+    if (
+        not inp.available
+        or env.mode != MODE_AUTO
+        or env.scenario.get("kind", KIND_OFF) == KIND_OFF
+        or env.grace_active
+    ):
+        return off
+    window_decision = _window_followup(cover, inp, rt, env)
+    if window_decision is not None:
+        return window_decision
+    due = schedule_due(cover, rt, env)
+    if due is not None:
+        return _scheduled(cover, inp, env, due)
+    return off
+
+
 def _decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env) -> Decision:
     if not cover["enabled"]:
-        return Decision(ST_DISABLED, "Ce volet n'est pas géré automatiquement")
+        return _schedule_only(cover, inp, rt, env)
     if not inp.available:
         return Decision(ST_UNAVAILABLE, "Le volet est indisponible")
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.10.15
+
+- Protection solaire, ouverture horaire et fermeture horaire sont maintenant trois réglages autonomes par volet. L'interrupteur `switch.volets_<nom>_auto` ne commande plus que la protection solaire : un volet dont la protection solaire est coupée s'ouvre et se ferme quand même aux horaires si ses cases « Ouverture du matin horaire » et « Fermeture du soir horaire » sont cochées (avant, il ignorait aussi les horaires).
+- Le statut `disabled` (« Désactivé ») signifie désormais « protection solaire coupée pour ce volet ».
+- Panneau : la case « Volet géré (activé) » devient « Protection solaire (gestion automatique du volet) ».
+- Le scénario « Désactivé » et le mode global manuel ou arrêté coupent toujours les horaires de tous les volets.
+
 ## 2026.10.14
 
 - Fiche d'un volet, section « Horaires d'ouverture et de fermeture » : le choix « Fermeture du soir si une fenêtre est ouverte » et le bouton à presser (ou la position en %) sont maintenant sur la même ligne. Le texte d'aide sur l'indépendance de l'ouverture et de la fermeture est placé en haut de la section.

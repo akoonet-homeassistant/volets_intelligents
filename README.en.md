@@ -74,8 +74,9 @@ Wind safety stays a priority in all three modes. Each mode is described under it
   (see below). A blocked order is retried at every evaluation for 3 hours, then dropped for the day.
 - The schedule is independent of the active window, but **switched off by the "Disabled" scenario**. It is also ignored when the global mode is
   "manual" or "off" and during the start-up safety delay; wind safety still takes priority. A scheduled order
-  ends a manual pause. Each order runs only once a day, even after a Home Assistant restart. A shutter that is not managed
-  (`switch.volets_<name>_auto` set to `off`) also ignores the schedule. The morning opening opens even a shutter
+  ends a manual pause. Each order runs only once a day, even after a Home Assistant restart. The three settings are independent: the
+  `switch.volets_<name>_auto` switch (solar protection) only affects solar protection, while each shutter's morning
+  opening and evening closing have their own switch and keep working even when solar protection is off. The morning opening opens even a shutter
   that is 100% closed, regardless of "Allow raising a shutter that is 100% closed".
 - **Solar gain**: after the evening scheduled closing, a solar-gain scenario (winter) no longer opens the shutter
   until the morning opening.
@@ -112,8 +113,7 @@ opening at any other time triggers nothing.
 
 ### Controlling each shutter
 
-- **"Auto" button per shutter**: in the panel's dashboard, one click enables or disables automatic
-  management of a shutter. It is the equivalent of the `switch.volets_*_auto` entity.
+- **"Auto" button per shutter**: in the panel's dashboard, one click enables or disables **solar protection** for a shutter. It is the equivalent of the `switch.volets_*_auto` entity. Scheduled opening and closing are set separately (`switch.volets_*_horaire_ouverture` and `switch.volets_*_horaire_fermeture`).
 - **Wanted position per shutter**: each shutter has its own protection position (percentage, "favorite
   position" button or full close).
 - **Automatic pause after a manual action**: if you move a shutter by hand, it is left alone for the chosen
@@ -364,7 +364,7 @@ Status values (`sensor.volets_<name>_statut`):
 | `mode_manual` | Manual mode | The global mode is "manual". |
 | `mode_off` | Off | The global mode is "off". |
 | `scenario_off` | Scenario disabled | The active scenario drives no shutter (schedule included). |
-| `disabled` | Disabled | Shutter not managed (switch `off`). |
+| `disabled` | Disabled | Solar protection off for this shutter (switch `off`); the schedule stays active if ticked. |
 | `unavailable` | Unavailable | The shutter entity is unavailable. |
 
 The display texts are shown in the language of your Home Assistant.
