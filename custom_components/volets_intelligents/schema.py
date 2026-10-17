@@ -27,8 +27,8 @@ from .const import (
     KIND_OFF,
     SCHEDULE_FIXED,
     SCHEDULE_MODES,
+    WINDOW_ACTION_BLOCK,
     WINDOW_ACTION_BUTTON,
-    WINDOW_ACTION_NONE,
     WINDOW_ACTIONS,
 )
 from .solar import ORIENTATION_SOUTH, ORIENTATIONS
@@ -83,7 +83,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "close_offset_minutes": 0,
             "block_open_alarm": True,
             "block_open_alarm_window": False,
-            "block_close_window": True,
         },
     },
     "scenarios": {
@@ -148,8 +147,9 @@ DEFAULT_COVER: dict[str, Any] = {
     "room_temp_entity": None,
     "window_entities": [],
     "block_close_if_open": True,
-    "window_open_action": "none",
+    "window_open_action": WINDOW_ACTION_BLOCK,
     "window_open_button": None,
+    "window_open_position": 30,
     "wind_sensitive": False,
     "wind_action": "open",
     "allow_open_closed_in": [],
@@ -298,7 +298,6 @@ _SCHEDULE = vol.Schema(
         vol.Required("close_offset_minutes"): _offset,
         vol.Required("block_open_alarm"): _bool,
         vol.Required("block_open_alarm_window"): _bool,
-        vol.Required("block_close_window"): _bool,
     },
     extra=vol.REMOVE_EXTRA,
 )
@@ -376,6 +375,7 @@ _COVER = vol.Schema(
         vol.Required("block_close_if_open"): _bool,
         vol.Required("window_open_action"): vol.In(WINDOW_ACTIONS),
         vol.Required("window_open_button"): _entity("button", "input_button"),
+        vol.Required("window_open_position"): _int(0, 100),
         vol.Required("wind_sensitive"): _bool,
         vol.Required("wind_action"): vol.In(("open", "close")),
         vol.Required("allow_open_closed_in"): _list_of(vol.In(("summer", "winter", "vacation", "off"))),
@@ -541,6 +541,8 @@ def normalize_config(raw: Any) -> dict[str, Any]:
         raise ConfigError(f"Volets : {MAX_COVERS} au maximum")
     seen_covers: set[str] = set()
     for index, item in enumerate(raw_covers, start=1):
+        if isinstance(item, dict) and item.get("window_open_action") == "none":
+            item = {**item, "window_open_action": WINDOW_ACTION_BLOCK}  # ancienne valeur (2026.10.11)
         cover = _validate(_COVER, _merge(DEFAULT_COVER, item), f"Volet n°{index}")
         if cover["entity_id"] in seen_covers:
             raise ConfigError(f"Volet « {cover['entity_id']} » en double")
@@ -561,15 +563,15 @@ def normalize_config(raw: Any) -> dict[str, Any]:
                 f"Volet « {cover['name']} » : choisissez le bouton à presser "
                 "ou une autre méthode de fermeture"
             )
-        if cover["window_open_action"] != WINDOW_ACTION_NONE and not cover["window_entities"]:
+        if cover["window_open_action"] != WINDOW_ACTION_BLOCK and not cover["window_entities"]:
             raise ConfigError(
                 f"Volet « {cover['name']} » : ajoutez un capteur de fenêtre pour utiliser "
-                "l'action « fenêtre ouverte »"
+                "le choix « fermeture du soir si une fenêtre est ouverte »"
             )
         if cover["window_open_action"] == WINDOW_ACTION_BUTTON and not cover["window_open_button"]:
             raise ConfigError(
                 f"Volet « {cover['name']} » : choisissez le bouton à presser quand la fenêtre "
-                "s'ouvre ou une autre action"
+                "est ouverte à l'heure de fermeture ou un autre choix"
             )
         covers.append(cover)
     config["covers"] = covers

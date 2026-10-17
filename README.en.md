@@ -29,7 +29,7 @@ panel** and a **Lovelace card**. No YAML to write.
 - **Opening condition (Winter)**: your choice of **room AND outdoor** under their thresholds (default),
   **room OR outdoor** (either is enough), **room only** or **outdoor only** (the other threshold is then ignored).
   An optional **low outdoor limit** (can be negative) stops the shutter from opening when the outdoor temperature is
-  at or below it. Set in the Scenarios tab.
+  at or below it. Set in the Solar protection tab.
 - **Alarm**: pick an `alarm_control_panel` entity (Settings). Each acting scenario (Summer, Winter, Vacation)
   has two independent options:
   - "**Do not open when the alarm is armed**": no automatic opening while the alarm is armed (`armed_*`
@@ -67,26 +67,34 @@ Wind safety stays a priority in all three modes. Each mode is described under it
   `switch.volets_<name>_horaires` switch) and globally (`switch.volets_horaires`). Off by default.
 - Opening brings the shutter to its open position; closing is complete. A shutter already in the right position
   is left alone.
-- **Blocks you can switch on or off** ("Blocks" section of the schedule, each with its own switch): the **alarm**
-  blocks opening; the **alarm and an open window** block opening; an **open window** blocks closing (for
-  shutters that have a window sensor and the "Do not close if a window is open" option). When unticked, the
-  scheduled order goes through anyway. A blocked order is retried at every evaluation for 3 hours, then dropped
-  for the day.
-- The schedule is independent of the scenario and of the active window. It is ignored when the global mode is
+- **Opening blocks you can switch on or off** ("Blocks" section of the schedule, each with its own switch): the
+  **alarm** blocks opening; the **alarm and an open window** block opening. When unticked, the opening goes
+  through anyway. **Closing** is handled shutter by shutter by the "Evening closing if a window is open" choice
+  (see below). A blocked order is retried at every evaluation for 3 hours, then dropped for the day.
+- The schedule is independent of the active window, but **switched off by the "Disabled" scenario**. It is also ignored when the global mode is
   "manual" or "off" and during the start-up safety delay; wind safety still takes priority. A scheduled order
-  ends a manual pause. Each order runs only once a day, even after a Home Assistant restart.
+  ends a manual pause. Each order runs only once a day, even after a Home Assistant restart. A shutter that is not managed
+  (`switch.volets_<name>_auto` set to `off`) also ignores the schedule. The morning opening opens even a shutter
+  that is 100% closed, regardless of "Allow raising a shutter that is 100% closed".
+- **Solar gain**: after the evening scheduled closing, a solar-gain scenario (winter) no longer opens the shutter
+  until the morning opening.
 
-### Action when a window opens
+### Evening closing if a window is open
 
-- Per shutter (Shutters tab, "Windows and doors" section), choose what the shutter does **when one of its windows
-  opens**: **nothing** (default), **close completely**, or **press a button** (programmed position, for example
-  the shutter's favourite position).
-- **When the window closes again**, the shutter closes completely.
-- Needs at least one window sensor on the shutter. While the window is open, no other rule (sun protection,
-  schedule) moves the shutter. An unavailable sensor triggers nothing and does not close the shutter. Wind safety
-  still takes priority.
-- Adjustable from the panel and from a dashboard (`select.volets_<name>_fenetre_ouverte`). The button is chosen in
-  the panel.
+Per-shutter choice (Shutters tab, "Scheduled opening and closing" section), which only concerns the **automatic
+evening closing**:
+
+- **Do not close** (default): the shutter waits until the window is closed (closing retried for 3 h). This block
+  always blocks, whatever the "Do not close if a window is open" box of the "Windows and doors" section says;
+  that box only sets the sun protection.
+- **Close completely**: the shutter closes at the planned time despite the window.
+- **Press a button**: the shutter goes to the button's programmed position (favourite position).
+- **Go to a position (in %)**: the shutter goes to the chosen position (it does not go up if already lower).
+
+With "button" or "position", the shutter **closes completely when the window closes**, at the latest until the
+next morning's opening. While the window is open, no other rule moves the shutter. An unavailable sensor does not
+close the shutter. These three choices need at least one window sensor; "button" also needs the button. A window
+opening at any other time triggers nothing.
 
 ### Facades and sun
 
@@ -132,7 +140,7 @@ Wind safety stays a priority in all three modes. Each mode is described under it
 
 ### Panel and dashboards
 
-- **Management panel** ("Management interface" from the Configure window): six tabs, see below.
+- **Management panel** ("Management interface" from the Configure window): seven tabs, see below.
 - **Entities for your dashboards**: mode, scenario, thresholds, active window, facades, and an "Auto" switch
   and a status per shutter. The panel's "Entities" tab lists the real identifiers, with ready-to-copy
   examples.
@@ -192,10 +200,11 @@ needed. The repository list in the HACS panel itself keeps its default image.
 | Tab | Content |
 |---|---|
 | Dashboard | Global mode, scenario, temperatures, active window, state of each shutter, pause and resume. |
-| Scenarios | Thresholds and conditions of each scenario, alarm options. |
-| Shutters | Shutter list: facade, protection position, method, room temperature, windows. |
+| Shutters | Shutter list, everything specific to one shutter: facade, protection position, method, room temperature, windows, schedule (follow it or not, evening closing if a window is open), wind. |
 | Facades | Orientation, lighting angle, horizon mask, the day's sunshine windows. |
-| Settings | Outdoor sensors, active window, manual pause, wind, alarm, weather, JSON import and export. |
+| Solar protection | Thresholds and conditions of each scenario, alarm options, automatic month-based scenario, active window. |
+| Schedule | Morning opening and evening closing of all shutters (fixed time or sun, offset), alarm blocks on opening. |
+| Settings | House orientation, outdoor sensors and alarm, wind, weather, manual pause, JSON import and export. |
 | Entities | Real identifiers of the integration's entities, ready-to-copy YAML examples, values of the modes and scenarios. |
 
 The screenshots below use demonstration data.
@@ -204,9 +213,9 @@ The screenshots below use demonstration data.
 
 ![Dashboard](docs/screenshots/dashboard-en.png)
 
-### Scenarios
+### Solar protection
 
-![Scenarios](docs/screenshots/scenarios-en.png)
+![Solar protection](docs/screenshots/scenarios-en.png)
 
 ### Shutters
 
@@ -215,6 +224,10 @@ The screenshots below use demonstration data.
 ### Facades
 
 ![Facades](docs/screenshots/facades-en.png)
+
+### Schedule
+
+![Schedule](docs/screenshots/schedule-en.png)
 
 ### Settings
 
@@ -291,7 +304,6 @@ examples, `bureau` is to be replaced by your shutter's name.
 | `sensor.volets_fermeture_prevue` | sensor (timestamp) | Today's closing time (empty if the schedule is disabled). |
 | `switch.volets_horaire_alarme_bloque_ouverture` | switch | **Setting**: an armed alarm blocks the scheduled opening. |
 | `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture` | switch | **Setting**: an armed alarm and an open window block the scheduled opening. |
-| `switch.volets_horaire_fenetre_bloque_fermeture` | switch | **Setting**: an open window blocks the scheduled closing. |
 
 ### Scenario thresholds
 
@@ -307,7 +319,7 @@ examples, `bureau` is to be replaced by your shutter's name.
 They change the matching scenario; the "vacation" and "disabled" scenarios have no thresholds.
 
 The entity that provides the window end (for example `sensor.volets_heure_remontee`) is chosen in the panel
-(Settings). Each change made through these entities is saved as if it came from the panel.
+(Solar protection tab). Each change made through these entities is saved as if it came from the panel.
 
 ### Facades: exposure and times
 
@@ -328,7 +340,8 @@ no conflict. The times are theoretical (sun geometry, no weather or obstacles) a
 | Entity | Type | Description |
 |---|---|---|
 | `switch.volets_<name>_auto` | switch | Automatic management of the shutter: `on` = managed, `off` = ignored by the integration. Replaces the `input_boolean.auto_volet_*`. |
-| `select.volets_<name>_fenetre_ouverte` | select | **Setting**: what the shutter does when its window opens: `none`, `close` (close completely), `button` (presses the programmed-position button). When the window closes, the shutter closes completely. |
+| `select.volets_<name>_horaire_fenetre` | select | **Setting**: evening closing if a window is open: `block` (do not close), `close` (close completely), `button` (press the programmed-position button), `position` (go to the chosen position). With `button` and `position`, the shutter closes completely when the window closes. |
+| `number.volets_<name>_horaire_fenetre_position` | number (%) | **Setting**: position reached with the `position` choice (0% = closed). |
 | `switch.volets_<name>_horaires` | switch | Includes (`on`, default) or excludes (`off`) the shutter from scheduled opening and closing. |
 | `sensor.volets_<name>_statut` | sensor (enum) | Shutter status (see below). The plain-language explanation and the other information are in the attributes. |
 
@@ -348,7 +361,7 @@ Status values (`sensor.volets_<name>_statut`):
 | `no_data` | Missing data | Outdoor temperature or exposure unavailable: no action. |
 | `mode_manual` | Manual mode | The global mode is "manual". |
 | `mode_off` | Off | The global mode is "off". |
-| `scenario_off` | Scenario disabled | The active scenario drives no shutter. |
+| `scenario_off` | Scenario disabled | The active scenario drives no shutter (schedule included). |
 | `disabled` | Disabled | Shutter not managed (switch `off`). |
 | `unavailable` | Unavailable | The shutter entity is unavailable. |
 

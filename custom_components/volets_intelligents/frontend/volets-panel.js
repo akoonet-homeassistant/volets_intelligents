@@ -21,7 +21,8 @@ const I18N = {
     "tab.dashboard": "Tableau de bord",
     "tab.covers": "Volets",
     "tab.facades": "Façades",
-    "tab.scenarios": "Scénarios",
+    "tab.scenarios": "Protection solaire",
+    "tab.schedule": "Horaires",
     "tab.settings": "Réglages",
     "tab.entities": "Entités",
     "ent.intro": "Les identifiants réels des entités créées par l'intégration, à utiliser dans vos tableaux de bord, automatisations et modèles.",
@@ -77,7 +78,7 @@ const I18N = {
     "ent.windowEndSetting": "Réglage : heure de fin (fixe ou repli)",
     "ent.windowEndMode": "Réglage : mode de fin",
     "ent.windowSunset": "Réglage : décalage coucher du soleil (min)",
-    "ent.windowHelp": "Les entités « Réglage » sont modifiables depuis un tableau de bord. L'entité qui donne la fin de plage se choisit dans le panneau (Réglages).",
+    "ent.windowHelp": "Les entités « Réglage » sont modifiables depuis un tableau de bord. L'entité qui donne la fin de plage se choisit dans le panneau (onglet Protection solaire).",
     "ent.endMode.fixed": "Heure fixe",
     "ent.endMode.entity": "Lue dans une entité",
     "ent.endMode.sunset": "Coucher du soleil",
@@ -101,8 +102,8 @@ const I18N = {
     "ent.schedCover": "Horaires du volet",
     "ent.schedBlockAlarm": "Réglage : l'alarme bloque l'ouverture",
     "ent.schedBlockAlarmWindow": "Réglage : alarme et fenêtre bloquent l'ouverture",
-    "ent.schedBlockWindow": "Réglage : la fenêtre bloque la fermeture",
-    "ent.windowAction": "Action quand la fenêtre s'ouvre",
+    "ent.windowAction": "Fermeture du soir si une fenêtre est ouverte",
+    "ent.windowPosition": "Position si une fenêtre est ouverte (choix « position »)",
     "ent.schedHelp": "Les entités « Réglage » et les interrupteurs sont modifiables depuis un tableau de bord. Le mode vaut fixed (heure fixe) ou sun (lever / coucher du soleil).",
     "ent.exSchedule": "Horaires d'ouverture et de fermeture (lecture et réglage)",
     "ent.exFacades": "Façades : exposition et horaires",
@@ -144,7 +145,7 @@ const I18N = {
     "scenario.summer.desc": "Protection contre la chaleur : ferme les volets exposés au soleil quand il fait chaud, les rouvre quand la chaleur retombe.",
     "scenario.winter.desc": "Gain solaire : rouvre un volet fermé et ensoleillé quand la pièce et l'extérieur sont frais. Ne ferme jamais.",
     "scenario.vacation.desc": "Absence : ferme les volets dès qu'ils sont exposés au soleil, sans condition de température, et les remonte quand le soleil part.",
-    "scenario.off.desc": "Aucune action liée au soleil ni aux températures.",
+    "scenario.off.desc": "Aucune action : ni soleil, ni températures, ni horaires d'ouverture et de fermeture.",
     "kind.heat_protection": "Protection contre la chaleur",
     "kind.solar_gain": "Apport solaire",
     "kind.hold_shaded": "Maintien à l'ombre",
@@ -292,25 +293,28 @@ const I18N = {
     "covers.windows": "Fenêtres / portes (capteurs d'ouverture)",
     "covers.windowSensor": "capteur d'ouverture",
     "covers.addWindow": "Ajouter : {label}",
-    "covers.blockClose": "Ne pas fermer si une fenêtre est ouverte",
+    "covers.blockClose": "Protection solaire : ne pas fermer si une fenêtre est ouverte",
     "covers.schedule": "Ouverture / fermeture horaires",
     "covers.secIdentity": "Volet",
     "covers.secSun": "Protection solaire et fermeture",
     "covers.secSunHelp": "Comment le volet est abaissé et relevé par les scénarios (été, hiver, vacances).",
     "covers.secWindows": "Fenêtres et portes",
-    "covers.secWindowsHelp": "Capteurs d'ouverture, blocage de la fermeture et action quand la fenêtre s'ouvre.",
+    "covers.secWindowsHelp": "Capteurs d'ouverture des fenêtres et des portes, et blocage de la fermeture.",
     "covers.secSchedule": "Horaires d'ouverture et de fermeture",
     "covers.secWind": "Vent",
-    "covers.windowAction": "Quand une fenêtre s'ouvre",
-    "covers.winNone": "Ne rien faire",
+    "covers.allowOpenClosed": "Autoriser à remonter un volet fermé à 100 %",
+    "covers.allowOpenClosedHelp": "Par défaut, un volet fermé à 100 % n'est jamais remonté par l'intégration, quelle que soit la façon dont il a été fermé. Activez un scénario pour lever cette règle dans ce scénario seulement. L'ouverture horaire du matin n'est pas concernée : elle ouvre aussi un volet fermé à 100 %.",
+    "covers.scheduleHelp": "Décochez pour que ce volet ignore les horaires d'ouverture et de fermeture (heures réglées dans l'onglet Horaires).",
+    "covers.schedWindow": "Fermeture du soir si une fenêtre est ouverte",
+    "covers.winBlock": "Ne pas fermer (attendre que la fenêtre soit fermée)",
     "covers.winClose": "Fermer complètement",
     "covers.winButton": "Presser un bouton (position programmée)",
-    "covers.windowActionHelp": "À la fermeture de la fenêtre, le volet se ferme complètement. Demande au moins un capteur de fenêtre. Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet.",
+    "covers.winPosition": "Aller à une position (en %)",
+    "covers.schedWindowHelp": "Ne concerne que la fermeture automatique du soir. « Ne pas fermer » bloque toujours. « Fermer complètement » : le volet se ferme malgré la fenêtre. « Bouton » ou « position » : le volet rejoint cette position, puis se ferme complètement quand la fenêtre se referme (au plus tard jusqu'à l'ouverture du lendemain). Demande au moins un capteur de fenêtre (section Fenêtres et portes).",
     "covers.windowButton": "Bouton à presser",
-    "covers.windowButtonHelp": "Bouton de la position programmée (position favorite du volet).",
-    "covers.scheduleHelp": "Décochez pour que ce volet ignore les horaires d'ouverture et de fermeture (réglés dans Réglages).",
-    "covers.allowOpenClosed": "Autoriser à remonter un volet fermé à 100 %",
-    "covers.allowOpenClosedHelp": "Par défaut, un volet fermé à 100 % n'est jamais remonté par l'intégration, quelle que soit la façon dont il a été fermé. Activez un scénario pour lever cette règle dans ce scénario seulement.",
+    "covers.windowButtonHelp": "Bouton de la position programmée (position favorite du volet), pressé à l'heure de fermeture si une fenêtre est ouverte.",
+    "covers.windowPosition": "Position à atteindre",
+    "covers.windowPositionHelp": "0 % = fermé, 100 % = ouvert. Le volet ne remonte pas s'il est déjà plus bas.",
     "covers.windSensitive": "Sensible au vent (mise en sécurité si vent fort)",
     "covers.windAction": "Action de mise en sécurité par vent fort",
     "covers.windActionHelp": "Ce que fait cet équipement quand le vent dépasse le seuil : un volet se remonte, un store ou une banne se rentre.",
@@ -428,7 +432,7 @@ const I18N = {
     "set.overrideWindowHelp": "Remplace la durée ci-contre quand une action manuelle est détectée.",
     "set.window": "Plage active",
     "set.schedule": "Ouverture et fermeture horaires",
-    "set.scheduleIntro": "Ouvre tous les volets le matin et les ferme le soir, à heure fixe ou selon le lever et le coucher du soleil. Chaque volet peut être exclu dans l'onglet Volets. Indépendant du scénario et de la plage active.",
+    "set.scheduleIntro": "Ouvre tous les volets le matin et les ferme le soir, à heure fixe ou selon le lever et le coucher du soleil. Chaque volet peut être exclu dans sa fiche (onglet Volets, section « Horaires d'ouverture et de fermeture »). Coupé par le scénario « Désactivé » ; indépendant de la plage active.",
     "set.scheduleEnabled": "Activer les ouvertures et fermetures horaires",
     "set.scheduleOpenMode": "Ouverture du matin",
     "set.scheduleCloseMode": "Fermeture du soir",
@@ -443,10 +447,10 @@ const I18N = {
     "set.schedBlocks": "Blocages (alarme et fenêtre)",
     "set.schedBlockAlarm": "Ne pas ouvrir si l'alarme est activée",
     "set.schedBlockAlarmWindow": "Ne pas ouvrir si l'alarme est activée et qu'une fenêtre est ouverte",
-    "set.schedBlockWindow": "Ne pas fermer si une fenêtre est ouverte",
-    "set.schedBlockWindowHelp": "S'applique aux volets dont l'option « Ne pas fermer si une fenêtre est ouverte » est cochée.",
+    "set.schedCloseNote": "La fermeture est gérée par le réglage « Fermeture du soir si une fenêtre est ouverte » de chaque volet (onglet Volets, fiche du volet, section « Horaires d'ouverture et de fermeture »).",
+    "set.schedInvalid": "Attention : l'heure d'ouverture doit précéder l'heure de fermeture. Tant que ce n'est pas le cas, aucun ordre horaire n'est envoyé.",
     "set.schedToday": "Aujourd'hui : ouverture à {open}, fermeture à {close}.",
-    "set.schedNote": "L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Les blocages par la fenêtre et par l'alarme se règlent ci-dessous. Un ordre bloqué est retenté pendant 3 h, puis abandonné.",
+    "set.schedNote": "L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Les blocages de l'ouverture par l'alarme se règlent plus haut dans cette carte. Un ordre bloqué est retenté pendant 3 h, puis abandonné.",
     "set.windowStart": "Début",
     "set.windowEndMode": "Fin de plage",
     "set.endEntity": "Selon une entité",
@@ -489,7 +493,8 @@ const I18N = {
     "tab.dashboard": "Dashboard",
     "tab.covers": "Shutters",
     "tab.facades": "Facades",
-    "tab.scenarios": "Scenarios",
+    "tab.scenarios": "Solar protection",
+    "tab.schedule": "Schedule",
     "tab.settings": "Settings",
     "tab.entities": "Entities",
     "ent.intro": "The actual identifiers of the entities created by the integration, to use in your dashboards, automations and templates.",
@@ -545,7 +550,7 @@ const I18N = {
     "ent.windowEndSetting": "Setting: end time (fixed or fallback)",
     "ent.windowEndMode": "Setting: end mode",
     "ent.windowSunset": "Setting: sunset offset (min)",
-    "ent.windowHelp": "The \"Setting\" entities can be changed from a dashboard. The entity that provides the end of the window is chosen in the panel (Settings).",
+    "ent.windowHelp": "The \"Setting\" entities can be changed from a dashboard. The entity that provides the end of the window is chosen in the panel (Solar protection tab).",
     "ent.endMode.fixed": "Fixed time",
     "ent.endMode.entity": "Read from an entity",
     "ent.endMode.sunset": "Sunset",
@@ -569,8 +574,8 @@ const I18N = {
     "ent.schedCover": "Shutter schedule",
     "ent.schedBlockAlarm": "Setting: the alarm blocks opening",
     "ent.schedBlockAlarmWindow": "Setting: alarm and window block opening",
-    "ent.schedBlockWindow": "Setting: the window blocks closing",
-    "ent.windowAction": "Action when the window opens",
+    "ent.windowAction": "Evening closing if a window is open",
+    "ent.windowPosition": "Position if a window is open (\"position\" choice)",
     "ent.schedHelp": "The \"Setting\" entities and switches can be changed from a dashboard. The mode is fixed (fixed time) or sun (sunrise / sunset).",
     "ent.exSchedule": "Scheduled opening and closing (read and adjust)",
     "ent.exFacades": "Facades: exposure and times",
@@ -612,7 +617,7 @@ const I18N = {
     "scenario.summer.desc": "Heat protection: closes sun-exposed shutters when it is hot and reopens them when the heat drops.",
     "scenario.winter.desc": "Solar gain: reopens a closed, sunny shutter when the room and the outdoors are cool. Never closes.",
     "scenario.vacation.desc": "Away: closes shutters as soon as they are sun-exposed, with no temperature condition, and raises them when the sun leaves.",
-    "scenario.off.desc": "No action based on the sun or temperatures.",
+    "scenario.off.desc": "No action: no sun, no temperatures, no scheduled opening and closing.",
     "kind.heat_protection": "Heat protection",
     "kind.solar_gain": "Solar gain",
     "kind.hold_shaded": "Stay shaded",
@@ -760,25 +765,28 @@ const I18N = {
     "covers.windows": "Windows / doors (opening sensors)",
     "covers.windowSensor": "opening sensor",
     "covers.addWindow": "Add: {label}",
-    "covers.blockClose": "Do not close if a window is open",
+    "covers.blockClose": "Sun protection: do not close if a window is open",
     "covers.schedule": "Scheduled opening / closing",
     "covers.secIdentity": "Shutter",
     "covers.secSun": "Sun protection and closing",
     "covers.secSunHelp": "How the shutter is lowered and raised by the scenarios (summer, winter, vacation).",
     "covers.secWindows": "Windows and doors",
-    "covers.secWindowsHelp": "Opening sensors, closing block and action when the window opens.",
+    "covers.secWindowsHelp": "Opening sensors of windows and doors, and closing block.",
     "covers.secSchedule": "Scheduled opening and closing",
     "covers.secWind": "Wind",
-    "covers.windowAction": "When a window opens",
-    "covers.winNone": "Do nothing",
+    "covers.allowOpenClosed": "Allow raising a shutter that is 100% closed",
+    "covers.allowOpenClosedHelp": "By default, a shutter that is 100% closed is never raised by the integration, however it was closed. Turn on a scenario to lift this rule for that scenario only. The scheduled morning opening is not affected: it also opens a shutter that is 100% closed.",
+    "covers.scheduleHelp": "Untick to make this shutter ignore the scheduled opening and closing times (set in the Schedule tab).",
+    "covers.schedWindow": "Evening closing if a window is open",
+    "covers.winBlock": "Do not close (wait until the window is closed)",
     "covers.winClose": "Close completely",
     "covers.winButton": "Press a button (programmed position)",
-    "covers.windowActionHelp": "When the window closes, the shutter closes completely. Needs at least one window sensor. While the window is open, no other rule moves the shutter.",
+    "covers.winPosition": "Go to a position (in %)",
+    "covers.schedWindowHelp": "Only concerns the automatic evening closing. \"Do not close\" always blocks. \"Close completely\": the shutter closes despite the window. \"Button\" or \"position\": the shutter goes to that position, then closes completely when the window closes (at the latest until the next morning's opening). Needs at least one window sensor (Windows and doors section).",
     "covers.windowButton": "Button to press",
-    "covers.windowButtonHelp": "Button of the programmed position (the shutter's favourite position).",
-    "covers.scheduleHelp": "Untick to make this shutter ignore the scheduled opening and closing times (set in Settings).",
-    "covers.allowOpenClosed": "Allow raising a shutter that is 100% closed",
-    "covers.allowOpenClosedHelp": "By default, a shutter that is 100% closed is never raised by the integration, however it was closed. Turn on a scenario to lift this rule for that scenario only.",
+    "covers.windowButtonHelp": "Button of the programmed position (the shutter's favourite position), pressed at closing time if a window is open.",
+    "covers.windowPosition": "Position to reach",
+    "covers.windowPositionHelp": "0% = closed, 100% = open. The shutter does not go up if it is already lower.",
     "covers.windSensitive": "Wind sensitive (safety move in strong wind)",
     "covers.windAction": "Safety action in strong wind",
     "covers.windActionHelp": "What this device does when the wind exceeds the threshold: a shutter is raised, an awning or blind is retracted.",
@@ -896,7 +904,7 @@ const I18N = {
     "set.overrideWindowHelp": "Replaces the duration beside when a manual action is detected.",
     "set.window": "Active hours",
     "set.schedule": "Scheduled opening and closing",
-    "set.scheduleIntro": "Opens all shutters in the morning and closes them in the evening, at a fixed time or following sunrise and sunset. Each shutter can be excluded in the Shutters tab. Independent of the scenario and of the active hours.",
+    "set.scheduleIntro": "Opens all shutters in the morning and closes them in the evening, at a fixed time or following sunrise and sunset. Each shutter can be excluded in its form (Shutters tab, \"Scheduled opening and closing\" section). Switched off by the \"Disabled\" scenario; independent of the active hours.",
     "set.scheduleEnabled": "Enable scheduled opening and closing",
     "set.scheduleOpenMode": "Morning opening",
     "set.scheduleCloseMode": "Evening closing",
@@ -911,10 +919,10 @@ const I18N = {
     "set.schedBlocks": "Blocks (alarm and window)",
     "set.schedBlockAlarm": "Do not open if the alarm is armed",
     "set.schedBlockAlarmWindow": "Do not open if the alarm is armed and a window is open",
-    "set.schedBlockWindow": "Do not close if a window is open",
-    "set.schedBlockWindowHelp": "Applies to shutters whose \"Do not close if a window is open\" option is ticked.",
+    "set.schedCloseNote": "Closing is handled by the \"Evening closing if a window is open\" setting of each shutter (Shutters tab, shutter form, \"Scheduled opening and closing\" section).",
+    "set.schedInvalid": "Warning: the opening time must be before the closing time. Until it is, no scheduled order is sent.",
     "set.schedToday": "Today: opening at {open}, closing at {close}.",
-    "set.schedNote": "Opening brings the shutter to its open position; closing is complete. The blocks by window and alarm are set below. A blocked order is retried for 3 h, then dropped.",
+    "set.schedNote": "Opening brings the shutter to its open position; closing is complete. The alarm blocks on opening are set above in this card. A blocked order is retried for 3 h, then dropped.",
     "set.windowStart": "Start",
     "set.windowEndMode": "End of active hours",
     "set.endEntity": "From an entity",
@@ -962,7 +970,7 @@ function translate(lang, key, vars) {
 /* Constantes                                                          */
 /* ------------------------------------------------------------------ */
 
-const TAB_IDS = ["dashboard", "scenarios", "covers", "facades", "settings", "entities"];
+const TAB_IDS = ["dashboard", "covers", "facades", "scenarios", "schedule", "settings", "entities"];
 const MODE_IDS = ["auto", "manual", "off"];
 const SCENARIO_IDS = ["summer", "winter", "vacation", "off"];
 const ORIENTATIONS = ["north", "east", "south", "west"];
@@ -1572,6 +1580,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       covers: () => this._coversView(),
       facades: () => this._facadesView(),
       scenarios: () => this._scenariosView(),
+      schedule: () => this._scheduleView(),
       entities: () => this._entitiesView(),
       settings: () => this._settingsView(),
     };
@@ -2148,7 +2157,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       button_entity: null, open_position: 100, room_temp_entity: null,
       window_entities: [], block_close_if_open: true, wind_sensitive: false, wind_action: "open",
       allow_open_closed_in: [], schedule_enabled: true,
-      window_open_action: "none", window_open_button: null,
+      window_open_action: "block", window_open_button: null, window_open_position: 30,
     };
   }
 
@@ -2227,6 +2236,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
   _coverCard(cover, index) {
     const covers = this._draft.covers;
     if (!Array.isArray(cover.window_entities)) cover.window_entities = [];
+    if (cover.window_open_action === undefined || cover.window_open_action === "none") cover.window_open_action = "block";
+    if (cover.window_open_position === undefined) cover.window_open_position = 30;
     if (!Array.isArray(cover.allow_open_closed_in)) cover.allow_open_closed_in = [];
     const facadeName = () => {
       const f = this._draft.facades.find((x) => x.id === cover.facade);
@@ -2279,7 +2290,12 @@ class VoletsIntelligentsPanel extends HTMLElement {
     const windowButtonField = this._field(this._t("covers.windowButton"),
       this._text(cover, "window_open_button", { list: "vi-dl-button", placeholder: "button.…" }),
       this._t("covers.windowButtonHelp"));
-    const syncWindowAction = () => { windowButtonField.hidden = cover.window_open_action !== "button"; };
+    const windowPositionField = this._field(this._t("covers.windowPosition"),
+      this._range(cover, "window_open_position"), this._t("covers.windowPositionHelp"));
+    const syncWindowAction = () => {
+      windowButtonField.hidden = cover.window_open_action !== "button";
+      windowPositionField.hidden = cover.window_open_action !== "position";
+    };
 
     // Action par vent fort : visible seulement si le volet est sensible au vent.
     const windActionField = this._field(this._t("covers.windAction"),
@@ -2318,14 +2334,15 @@ class VoletsIntelligentsPanel extends HTMLElement {
           this._field(this._t("covers.windows"),
             this._entityChips(cover.window_entities, { list: "vi-dl-binary_sensor", placeholder: "binary_sensor.…", label: this._t("covers.windowSensor") }),
             null, true),
-          this._toggle(cover, "block_close_if_open", this._t("covers.blockClose")),
-          this._field(this._t("covers.windowAction"),
-            this._select(cover, "window_open_action", [["none", this._t("covers.winNone")],
-              ["close", this._t("covers.winClose")], ["button", this._t("covers.winButton")]], syncWindowAction),
-            this._t("covers.windowActionHelp")),
-          windowButtonField),
+          this._toggle(cover, "block_close_if_open", this._t("covers.blockClose"))),
         this._section(this._t("covers.secSchedule"), null,
-          this._toggle(cover, "schedule_enabled", this._t("covers.schedule"), this._t("covers.scheduleHelp"))),
+          this._toggle(cover, "schedule_enabled", this._t("covers.schedule"), this._t("covers.scheduleHelp")),
+          this._field(this._t("covers.schedWindow"),
+            this._select(cover, "window_open_action", [["block", this._t("covers.winBlock")],
+              ["close", this._t("covers.winClose")], ["button", this._t("covers.winButton")],
+              ["position", this._t("covers.winPosition")]], syncWindowAction),
+            this._t("covers.schedWindowHelp")),
+          windowButtonField, windowPositionField),
         this._section(this._t("covers.secWind"), null,
           windToggle, windActionField)));
     card.addEventListener("toggle", () => {
@@ -2591,7 +2608,13 @@ class VoletsIntelligentsPanel extends HTMLElement {
     const scenarios = this._draft.scenarios;
     const keys = SCENARIO_IDS.filter((k) => k in scenarios)
       .concat(Object.keys(scenarios).filter((k) => !SCENARIO_IDS.includes(k)));
-    return el("div", { class: "stack" }, keys.map((key) => this._scenarioCard(key, scenarios[key])));
+    const p = this._settingsParts();
+    return el("div", { class: "stack" }, keys.map((key) => this._scenarioCard(key, scenarios[key])).concat([p.auto, p.window]));
+  }
+
+  /** Onglet « Horaires » : réglages globaux uniquement (les réglages par volet sont dans la fiche du volet). */
+  _scheduleView() {
+    return el("div", { class: "stack" }, this._settingsParts().schedule);
   }
 
   _scenarioCard(key, sc) {
@@ -2736,7 +2759,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
     if (kind === "ts") return this._time(v);
     if (kind === "time") return String(v).slice(0, 5);
     if (kind === "endmode") return ["fixed", "entity", "sunset"].includes(v) ? this._t(`ent.endMode.${v}`) : v;
-    if (kind === "windowaction") return { none: this._t("covers.winNone"), close: this._t("covers.winClose"), button: this._t("covers.winButton") }[v] || v;
+    if (kind === "windowaction") return { block: this._t("covers.winBlock"), close: this._t("covers.winClose"), button: this._t("covers.winButton"), position: this._t("covers.winPosition") }[v] || v;
+    if (kind === "percent") return `${v} %`;
     if (kind === "schedmode") return v === "fixed" ? this._t("set.schedFixed") : v === "sun" ? this._t("ent.schedSun") : v;
     if (kind === "minutes") return `${v} min`;
     return v;
@@ -2788,6 +2812,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
           this._entityRow(this._t("ent.switch"), c.switch, "switch"),
           this._entityRow(this._t("ent.schedCover"), c.schedule, "switch"),
           this._entityRow(this._t("ent.windowAction"), c.window_action, "windowaction"),
+          this._entityRow(this._t("ent.windowPosition"), c.window_position, "percent"),
           this._entityRow(this._t("ent.status"), c.status, "status")))))
         : el("p", { class: "muted", text: this._t("ent.noCovers") }));
 
@@ -2817,7 +2842,6 @@ class VoletsIntelligentsPanel extends HTMLElement {
       this._entityRow(this._t("ent.schedCloseAt"), sc.close_at, "ts"),
       this._entityRow(this._t("ent.schedBlockAlarm"), sc.block_open_alarm, "switch"),
       this._entityRow(this._t("ent.schedBlockAlarmWindow"), sc.block_open_alarm_window, "switch"),
-      this._entityRow(this._t("ent.schedBlockWindow"), sc.block_close_window, "switch"),
       el("p", { class: "small muted", text: this._t("ent.schedHelp") }));
 
     const thresholdsCard = el("section", { class: "card" },
@@ -2862,6 +2886,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       list.forEach((c) => {
         const name = c.name || c.cover;
         if (c.switch) coverYaml.push(`      - entity: ${c.switch}`, `        name: ${q(`${name} : ${this._t("ent.switch").toLowerCase()}`)}`);
+        if (c.window_position) coverYaml.push(`      - entity: ${c.window_position}`, `        name: ${q(`${name} : ${this._t("ent.windowPosition").toLowerCase()}`)}`);
         if (c.window_action) coverYaml.push(`      - entity: ${c.window_action}`, `        name: ${q(`${name} : ${this._t("ent.windowAction").toLowerCase()}`)}`);
         if (c.schedule) coverYaml.push(`      - entity: ${c.schedule}`, `        name: ${q(`${name} : ${this._t("ent.schedCover").toLowerCase()}`)}`);
         if (c.status) {
@@ -2895,8 +2920,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       [sc.open_offset, "ent.schedOpenOffset"], [sc.open_at, "ent.schedOpenAt"],
       [sc.close_mode, "ent.schedCloseMode"], [sc.close_time, "ent.schedCloseTime"],
       [sc.close_offset, "ent.schedCloseOffset"], [sc.close_at, "ent.schedCloseAt"],
-      [sc.block_open_alarm, "ent.schedBlockAlarm"], [sc.block_open_alarm_window, "ent.schedBlockAlarmWindow"],
-      [sc.block_close_window, "ent.schedBlockWindow"]].forEach(([id, key]) => {
+      [sc.block_open_alarm, "ent.schedBlockAlarm"], [sc.block_open_alarm_window, "ent.schedBlockAlarmWindow"]].forEach(([id, key]) => {
       if (id) scheduleYaml.push(`  - entity: ${id}`, `    name: ${q(this._t(key))}`);
     });
 
@@ -2920,7 +2944,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
     return [el("p", { class: "muted", text: this._t("ent.intro") }), globals, windowCard, scheduleCard, thresholdsCard, facadesCard, perCover, examples, values];
   }
 
-  _settingsView() {
+  /** Construit toutes les cartes de réglages ; les onglets en choisissent une partie. */
+  _settingsParts() {
     const s = this._draft.settings;
     const w = s.window;
     const a = s.auto_scenario;
@@ -2954,7 +2979,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
       s.schedule = { enabled: false, open_mode: "fixed", open_time: "07:30", open_offset_minutes: 0,
         close_mode: "fixed", close_time: "21:00", close_offset_minutes: 0 };
     }
-    for (const [k, v] of Object.entries({ block_open_alarm: true, block_open_alarm_window: false, block_close_window: true })) {
+    for (const [k, v] of Object.entries({ block_open_alarm: true, block_open_alarm_window: false })) {
       if (s.schedule[k] === undefined) s.schedule[k] = v;
     }
     const sch = s.schedule;
@@ -2976,6 +3001,9 @@ class VoletsIntelligentsPanel extends HTMLElement {
     const schedToday = st && st.schedule_open && st.schedule_close
       ? el("p", { class: "small muted", text: this._t("set.schedToday", { open: st.schedule_open, close: st.schedule_close }) })
       : null;
+    const schedInvalid = st && st.schedule_enabled && st.schedule_valid === false
+      ? el("p", { class: "notice c-red", role: "alert", text: this._t("set.schedInvalid") })
+      : null;
     const scheduleCard = el("section", { class: "card" },
       el("h2", { text: this._t("set.schedule") }),
       el("p", { class: "small muted", text: this._t("set.scheduleIntro") }),
@@ -2991,16 +3019,16 @@ class VoletsIntelligentsPanel extends HTMLElement {
       el("h3", { text: this._t("set.schedBlocks") }),
       this._toggle(sch, "block_open_alarm", this._t("set.schedBlockAlarm")),
       this._toggle(sch, "block_open_alarm_window", this._t("set.schedBlockAlarmWindow")),
-      this._toggle(sch, "block_close_window", this._t("set.schedBlockWindow"), this._t("set.schedBlockWindowHelp")),
-      schedToday,
+      el("p", { class: "small muted", text: this._t("set.schedCloseNote") }),
+      schedToday, schedInvalid,
       el("p", { class: "small muted", text: this._t("set.schedNote") }));
     syncSched();
 
     const compass = this._compass();
     compass.update(s.house_orientation);
 
-    const view = el("div", { class: "stack" },
-      el("section", { class: "card" },
+    const parts = {
+      house: el("section", { class: "card" },
         el("h2", { text: this._t("set.house") }),
         el("div", { class: "house-row" },
           this._field(this._t("set.houseOrientation"),
@@ -3008,8 +3036,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
               onInput: () => compass.update(s.house_orientation) }),
             this._t("set.houseHelp")),
           compass.svg)),
-
-      el("section", { class: "card" },
+      sensors: el("section", { class: "card" },
         el("h2", { text: this._t("set.sensors") }),
         el("div", { class: "fields" },
           ent(s, "outdoor_temp_entity", this._t("set.outdoor"), "vi-dl-sensor", "sensor.…"),
@@ -3025,8 +3052,7 @@ class VoletsIntelligentsPanel extends HTMLElement {
             this._t("set.windRatioHelp"))),
         this._field(this._t("set.sunny"), this._toggleChips(s.sunny_conditions, conditionOptions),
           this._t("set.sunnyHelp"), true)),
-
-      el("section", { class: "card" },
+      eval: el("section", { class: "card" },
         el("h2", { text: this._t("set.eval") }),
         el("div", { class: "fields" },
           num(s, "evaluation_interval_minutes", this._t("set.interval"), { min: 1, max: 60, step: 1 }),
@@ -3037,26 +3063,28 @@ class VoletsIntelligentsPanel extends HTMLElement {
           num(s, "override_pause_minutes", this._t("set.overridePause"), { min: 0, max: 1440, step: 1 }),
           this._toggle(s, "override_until_window_end", this._t("set.overrideWindow"),
             this._t("set.overrideWindowHelp")))),
-
-      el("section", { class: "card" },
+      window: el("section", { class: "card" },
         el("h2", { text: this._t("set.window") }),
         el("div", { class: "fields" },
           this._field(this._t("set.windowStart"), this._timeInput(w, "start"), this._t("set.windowStartHelp")),
           endModeField,
           endFields.entity, endFields.fixed, endFields.sunset)),
-
-      scheduleCard,
-
-      el("section", { class: "card" },
+      schedule: scheduleCard,
+      auto: el("section", { class: "card" },
         el("h2", { text: this._t("set.auto") }),
         this._toggle(a, "enabled", this._t("set.autoEnabled")),
         this._field(this._t("set.summerMonths"),
           this._toggleChips(a.summer_months, this._monthOptions(), true),
           this._t("set.summerMonthsHelp"), true)),
-
-      this._backupSection());
+      backup: this._backupSection(),
+    };
     syncEnd();
-    return view;
+    return parts;
+  }
+
+  _settingsView() {
+    const p = this._settingsParts();
+    return el("div", { class: "stack" }, p.house, p.sensors, p.eval, p.backup);
   }
 
   /** Mois 1..12 avec noms abrégés dans la langue courante (données de locale du navigateur). */

@@ -1,4 +1,4 @@
-"""Décalage par rapport au coucher du soleil (fin de plage en mode « coucher du soleil »)."""
+"""Nombres : décalages (coucher, horaires), seuils des scénarios, position « fenêtre ouverte » des volets."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from homeassistant.const import UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .entity import VoletsEntity
+from .entity import ManagedCoverEntity, VoletsEntity, async_setup_dynamic_covers
 from .manager import VoletsManager
 
 
@@ -16,6 +16,12 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     manager = entry.runtime_data
+    entry.async_on_unload(
+        async_setup_dynamic_covers(
+            hass, manager, entry.entry_id, "number", "window_position",
+            CoverWindowPositionNumber, async_add_entities,
+        )
+    )
     async_add_entities(
         [
             SunsetOffsetNumber(manager, entry.entry_id),
@@ -126,3 +132,31 @@ class ScenarioThresholdNumber(VoletsEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self.manager.async_set_scenario_setting(self._scenario, self._key, float(value))
+
+
+class CoverWindowPositionNumber(ManagedCoverEntity, NumberEntity):
+    """Position (en %) du volet à la fermeture du soir si une fenêtre est ouverte (choix « position »)."""
+
+    _attr_icon = "mdi:window-shutter-open"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 100
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = "%"
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, manager: VoletsManager, entry_id: str, cover_id: str) -> None:
+        super().__init__(manager, entry_id, cover_id)
+        self._attr_unique_id = f"{entry_id}_{cover_id}_window_position"
+
+    @property
+    def name(self) -> str:
+        cover = self.cover_config()
+        return f"Volets {cover['name'] if cover else self.cover_id} horaire fenêtre position"
+
+    @property
+    def native_value(self) -> float | None:
+        cover = self.cover_config()
+        return cover["window_open_position"] if cover else None
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.manager.async_set_cover_window_position(self.cover_id, int(value))

@@ -29,7 +29,7 @@ graphique** et une **carte Lovelace**. Aucun YAML à écrire.
 - **Condition d'ouverture (Hiver)** : au choix, la **pièce ET l'extérieur** sous leurs seuils (par défaut), la
   la **pièce OU l'extérieur** (un seul suffit), la **pièce seulement** ou l'**extérieur seulement** (l'autre seuil
   est alors ignoré). Une **limite extérieure basse** optionnelle (négative possible) empêche d'ouvrir le volet quand
-  l'extérieur est à cette température ou en dessous. Réglages dans l'onglet Scénarios.
+  l'extérieur est à cette température ou en dessous. Réglages dans l'onglet Protection solaire.
 - **Alarme** : choisissez une entité `alarm_control_panel` (Réglages). Chaque scénario d'action (Été, Hiver,
   Vacances) propose deux options, indépendantes :
   - « **Ne pas ouvrir quand l'alarme est activée** » : aucune ouverture automatique tant que l'alarme est armée
@@ -67,27 +67,36 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
   `switch.volets_<nom>_horaires`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
 - L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
   position n'est pas touché.
-- **Blocages activables** (section « Blocages » des horaires, chacun avec son interrupteur) : l'**alarme** bloque
-  l'ouverture ; l'**alarme et une fenêtre ouverte** bloquent l'ouverture ; une **fenêtre ouverte** bloque la
-  fermeture (pour les volets qui ont un capteur de fenêtre et l'option « Ne pas fermer si une fenêtre est
-  ouverte »). Décochés, l'ordre horaire passe quand même. Un ordre bloqué est retenté à chaque évaluation
-  pendant 3 heures, puis abandonné pour la journée.
-- Les horaires sont indépendants du scénario et de la plage active. Ils sont ignorés quand le mode global est
-  « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
+- **Blocages de l'ouverture activables** (section « Blocages » de l'onglet Horaires, chacun avec son interrupteur) :
+  l'**alarme** bloque l'ouverture ; l'**alarme et une fenêtre ouverte** bloquent l'ouverture. Décochés,
+  l'ouverture passe quand même. La **fermeture** est gérée volet par volet par le choix « Fermeture du soir si
+  une fenêtre est ouverte » (voir plus bas). Un ordre bloqué est retenté à chaque évaluation pendant 3 heures,
+  puis abandonné pour la journée.
+- Les horaires sont indépendants de la plage active, mais **coupés par le scénario « Désactivé »**. Ils sont
+  aussi ignorés quand le mode global est « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
   prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
-  même après un redémarrage de Home Assistant.
+  même après un redémarrage de Home Assistant. Un volet non géré (`switch.volets_<nom>_auto` sur `off`) ignore
+  aussi les horaires. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
+  remonter un volet fermé à 100 % ».
+- **Gain solaire** : après la fermeture horaire du soir, un scénario de gain solaire (hiver) n'ouvre plus le volet
+  jusqu'à l'ouverture du matin.
 
-### Action quand une fenêtre s'ouvre
+### Fermeture du soir si une fenêtre est ouverte
 
-- Par volet (onglet Volets, section « Fenêtres et portes »), choix de ce que fait le volet **quand une de ses
-  fenêtres s'ouvre** : **rien** (par défaut), **se fermer complètement**, ou **presser un bouton** (position
-  programmée, par exemple la position favorite du volet).
-- **Quand la fenêtre se referme**, le volet se ferme complètement.
-- Demande au moins un capteur de fenêtre sur le volet. Tant que la fenêtre est ouverte, aucune autre règle
-  (protection solaire, horaires) ne déplace le volet. Un capteur indisponible ne déclenche rien et ne referme
-  pas le volet. La sécurité vent reste prioritaire.
-- Réglable depuis le panneau et depuis un tableau de bord (`select.volets_<nom>_fenetre_ouverte`). Le bouton se
-  choisit dans le panneau.
+Choix par volet (onglet Volets, section « Horaires d'ouverture et de fermeture »), qui ne concerne que la
+**fermeture automatique du soir** :
+
+- **Ne pas fermer** (par défaut) : le volet attend que la fenêtre soit fermée (fermeture retentée pendant 3 h).
+  Ce choix bloque toujours, quelle que soit la case « Ne pas fermer si une fenêtre est ouverte » de la section
+  « Fenêtres et portes », qui ne règle que la protection solaire.
+- **Fermer complètement** : le volet se ferme à l'heure prévue malgré la fenêtre.
+- **Presser un bouton** : le volet rejoint la position programmée du bouton (position favorite).
+- **Aller à une position (en %)** : le volet va à la position choisie (il ne remonte pas s'il est déjà plus bas).
+
+Avec « bouton » ou « position », le volet se **ferme complètement quand la fenêtre se referme**, au plus tard
+jusqu'à l'ouverture du lendemain. Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet. Un
+capteur indisponible ne referme pas le volet. Ces trois choix demandent au moins un capteur de fenêtre ; « bouton »
+demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenche rien.
 
 ### Façades et soleil
 
@@ -133,7 +142,7 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
 
 ### Panneau et tableaux de bord
 
-- **Panneau de gestion** (« Interface de gestion » depuis la fenêtre Configurer) : six onglets, voir plus bas.
+- **Panneau de gestion** (« Interface de gestion » depuis la fenêtre Configurer) : sept onglets, voir plus bas.
 - **Entités pour vos tableaux de bord** : mode, scénario, seuils, plage active, façades, et un interrupteur
   « Auto » et un statut par volet. L'onglet « Entités » du panneau liste les identifiants réels, avec des
   exemples prêts à copier.
@@ -194,10 +203,11 @@ besoin. La liste des dépôts dans le panneau HACS lui-même garde son image par
 | Onglet | Contenu |
 |---|---|
 | Tableau de bord | Mode global, scénario, températures, plage active, état de chaque volet, pause et reprise. |
-| Scénarios | Seuils et conditions de chaque scénario, options d'alarme. |
-| Volets | Liste des volets : façade, position de protection, méthode, température de la pièce, fenêtres. |
+| Volets | Liste des volets, tout ce qui est propre à un volet : façade, position de protection, méthode, température de la pièce, fenêtres, horaires (suivre ou non, fermeture du soir si une fenêtre est ouverte), vent. |
 | Façades | Orientation, angle d'éclairage, masque d'horizon, plages d'ensoleillement du jour. |
-| Réglages | Capteurs extérieurs, plage active, pause manuelle, vent, alarme, météo, import et export JSON. |
+| Protection solaire | Seuils et conditions de chaque scénario, options d'alarme, scénario automatique selon les mois, plage active. |
+| Horaires | Ouverture du matin et fermeture du soir de tous les volets (heure fixe ou soleil, décalage), blocages de l'ouverture par l'alarme. |
+| Réglages | Orientation de la maison, capteurs extérieurs et alarme, vent, météo, pause manuelle, import et export JSON. |
 | Entités | Identifiants réels des entités de l'intégration, exemples YAML prêts à copier, valeurs des modes et scénarios. |
 
 Les captures ci-dessous utilisent des données de démonstration.
@@ -206,9 +216,9 @@ Les captures ci-dessous utilisent des données de démonstration.
 
 ![Tableau de bord](docs/screenshots/tableau-de-bord.png)
 
-### Scénarios
+### Protection solaire
 
-![Scénarios](docs/screenshots/scenarios.png)
+![Protection solaire](docs/screenshots/scenarios.png)
 
 ### Volets
 
@@ -217,6 +227,10 @@ Les captures ci-dessous utilisent des données de démonstration.
 ### Façades
 
 ![Façades](docs/screenshots/facades.png)
+
+### Horaires
+
+![Horaires](docs/screenshots/horaires.png)
 
 ### Réglages
 
@@ -293,7 +307,6 @@ nom de votre volet.
 | `sensor.volets_fermeture_prevue` | sensor (horodatage) | Heure de fermeture du jour (vide si les horaires sont désactivés). |
 | `switch.volets_horaire_alarme_bloque_ouverture` | switch | **Réglage** : l'alarme activée bloque l'ouverture horaire. |
 | `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture` | switch | **Réglage** : l'alarme activée et une fenêtre ouverte bloquent l'ouverture horaire. |
-| `switch.volets_horaire_fenetre_bloque_fermeture` | switch | **Réglage** : une fenêtre ouverte bloque la fermeture horaire. |
 
 ### Seuils des scénarios
 
@@ -309,7 +322,7 @@ nom de votre volet.
 Ils modifient le scénario correspondant ; les scénarios « vacances » et « désactivé » n'ont pas de seuils.
 
 L'entité qui fournit la fin de plage (par exemple `sensor.volets_heure_remontee`) se choisit dans le panneau
-(Réglages). Chaque modification faite par ces entités est enregistrée comme si elle venait du panneau.
+(onglet Protection solaire). Chaque modification faite par ces entités est enregistrée comme si elle venait du panneau.
 
 ### Façades : exposition et horaires
 
@@ -330,7 +343,8 @@ rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
 | Entité | Type | Description |
 |---|---|---|
 | `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
-| `select.volets_<nom>_fenetre_ouverte` | select | **Réglage** : action du volet quand sa fenêtre s'ouvre : `none` (rien), `close` (fermeture complète), `button` (presse le bouton de position programmée). À la fermeture de la fenêtre, le volet se ferme complètement. |
+| `select.volets_<nom>_horaire_fenetre` | select | **Réglage** : fermeture du soir si une fenêtre est ouverte : `block` (ne pas fermer), `close` (fermer complètement), `button` (presser le bouton de position programmée), `position` (aller à la position choisie). Avec `button` et `position`, le volet se ferme complètement quand la fenêtre se referme. |
+| `number.volets_<nom>_horaire_fenetre_position` | number (%) | **Réglage** : position atteinte avec le choix `position` (0 % = fermé). |
 | `switch.volets_<nom>_horaires` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet des ouvertures et fermetures horaires. |
 | `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
 
@@ -350,7 +364,7 @@ Valeurs du statut (`sensor.volets_<nom>_statut`) :
 | `no_data` | Données manquantes | Température extérieure ou exposition indisponible : aucune action. |
 | `mode_manual` | Mode manuel | Le mode global est « manuel ». |
 | `mode_off` | Arrêté | Le mode global est « arrêté ». |
-| `scenario_off` | Scénario désactivé | Le scénario actif ne commande aucun volet. |
+| `scenario_off` | Scénario désactivé | Le scénario actif ne commande aucun volet (horaires compris). |
 | `disabled` | Désactivé | Volet non géré (interrupteur sur `off`). |
 | `unavailable` | Indisponible | L'entité volet est indisponible. |
 

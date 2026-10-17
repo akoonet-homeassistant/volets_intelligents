@@ -145,7 +145,7 @@ class ScheduleModeSelect(VoletsEntity, SelectEntity):
 
 
 class CoverWindowActionSelect(ManagedCoverEntity, SelectEntity):
-    """Action du volet quand sa fenêtre s'ouvre : rien, fermeture complète ou bouton (position programmée)."""
+    """Fermeture du soir si une fenêtre est ouverte : attendre, fermer, presser un bouton ou aller à une position."""
 
     _attr_translation_key = "window_action"
     _attr_options = list(WINDOW_ACTIONS)
@@ -158,7 +158,7 @@ class CoverWindowActionSelect(ManagedCoverEntity, SelectEntity):
     @property
     def name(self) -> str:
         cover = self.cover_config()
-        return f"Volets {cover['name'] if cover else self.cover_id} fenêtre ouverte"
+        return f"Volets {cover['name'] if cover else self.cover_id} horaire fenêtre"
 
     @property
     def current_option(self) -> str | None:

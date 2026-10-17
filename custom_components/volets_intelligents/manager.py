@@ -31,7 +31,7 @@ from .const import (
     ACTION_OPEN,
     CLOSE_BUTTON,
     CLOSE_POSITION,
-    WINDOW_ACTION_NONE,
+    WINDOW_ACTION_BLOCK,
     CONFIG_VERSION,
     END_ENTITY,
     END_SUNSET,
@@ -48,7 +48,7 @@ from .const import (
     STORAGE_KEY_RUNTIME,
     STORAGE_VERSION,
 )
-from .engine import CoverInputs, CoverRuntime, Decision, Env, decide
+from .engine import CoverInputs, CoverRuntime, Decision, Env, decide, window_hold_active
 from .schema import ConfigError, default_config, normalize_config
 from .solar import exposure_windows, facade_azimuth, is_exposed, sun_position
 
@@ -125,7 +125,9 @@ class VoletsManager:
                 last_action=data.get("last_action"),
                 last_action_at=_parse_dt(data.get("last_action_at")),
                 schedule_key=data.get("schedule_key"),
-                window_triggered=bool(data.get("window_triggered")),
+                window_triggered=data["window_triggered"]
+                if isinstance(data.get("window_triggered"), str)
+                else None,
             )
 
     async def async_start(self) -> None:
@@ -551,7 +553,6 @@ class VoletsManager:
             schedule_catchup=timedelta(minutes=SCHEDULE_CATCHUP_MINUTES),
             schedule_block_open_alarm=settings["schedule"]["block_open_alarm"],
             schedule_block_open_alarm_window=settings["schedule"]["block_open_alarm_window"],
-            schedule_block_close_window=settings["schedule"]["block_close_window"],
         )
 
         sun = self._sun_now(now)
@@ -583,18 +584,21 @@ class VoletsManager:
             decision = decide(cover, inp, rt, env)
             if decision.forget:
                 rt.shaded_by_us = False
-            if cover["window_open_action"] == WINDOW_ACTION_NONE and rt.window_triggered:
-                rt.window_triggered = False  # action désactivée entre-temps
+            if rt.window_triggered and (
+                cover["window_open_action"] == WINDOW_ACTION_BLOCK
+                or not window_hold_active(rt, env)
+            ):
+                rt.window_triggered = None  # choix modifié, ou attente expirée (ouverture du lendemain)
             if decision.action and not self._already_sent(rt, decision.action, now):
                 if await self._execute(cover, decision, rt, now):
                     if decision.schedule_key:
                         rt.schedule_key = decision.schedule_key
                         rt.paused_until = None  # un ordre horaire met fin à une pause manuelle
-                    self._mark_window(decision, rt)
+                    self._mark_window(decision, rt, now)
             elif not decision.action:
                 if decision.schedule_key:
                     rt.schedule_key = decision.schedule_key  # rien à faire : déjà dans l'état voulu
-                self._mark_window(decision, rt)
+                self._mark_window(decision, rt, now)
             covers_status.append(self._cover_status(cover, inp, rt, decision))
 
         self.status = {
@@ -610,6 +614,7 @@ class VoletsManager:
             "window_end_at": _iso(end_dt),
             "grace_active": grace,
             "schedule_enabled": settings["schedule"]["enabled"],
+            "schedule_valid": schedule_open is None or schedule_open < schedule_close,
             "schedule_open_at": _iso(schedule_open),
             "schedule_close_at": _iso(schedule_close),
             "schedule_open": schedule_open.strftime("%H:%M") if schedule_open else None,
@@ -630,12 +635,12 @@ class VoletsManager:
         async_dispatcher_send(self.hass, SIGNAL_STATUS_UPDATED)
 
     @staticmethod
-    def _mark_window(decision: Decision, rt: CoverRuntime) -> None:
-        """Mémorise que l'action « fenêtre ouverte » est faite (ou que la fenêtre est refermée)."""
+    def _mark_window(decision: Decision, rt: CoverRuntime, now: datetime) -> None:
+        """Mémorise que le volet attend la fermeture de sa fenêtre (ou que c'est fait)."""
         if decision.window_event == "open":
-            rt.window_triggered = True
+            rt.window_triggered = now.date().isoformat()
         elif decision.window_event == "closed":
-            rt.window_triggered = False
+            rt.window_triggered = None
 
     def _arm_schedule(
         self, now: datetime, open_at: datetime | None, close_at: datetime | None
@@ -709,7 +714,7 @@ class VoletsManager:
             "enabled": cover["enabled"],
             "schedule_enabled": cover["schedule_enabled"],
             "window_open_action": cover["window_open_action"],
-            "window_triggered": rt.window_triggered,
+            "window_triggered": bool(rt.window_triggered),
             "status": decision.status,
             "reason": decision.reason,
             "position": inp.position,
@@ -753,7 +758,18 @@ class VoletsManager:
         context = Context()
         rt.last_command_at = now  # avant l'appel : évite une fausse détection manuelle
         try:
-            if decision.button:
+            if decision.position is not None:
+                if self._supports_position(cover["entity_id"]):
+                    await self.hass.services.async_call(
+                        "cover",
+                        "set_cover_position",
+                        {"entity_id": cover["entity_id"], "position": decision.position},
+                        blocking=False,
+                        context=context,
+                    )
+                else:  # pas de position intermédiaire : fermeture complète
+                    await self._send_plain(cover, ACTION_CLOSE, context)
+            elif decision.button:
                 await self.hass.services.async_call(
                     decision.button.split(".")[0],
                     "press",
@@ -909,6 +925,17 @@ class VoletsManager:
         for cover in config["covers"]:
             if cover["entity_id"] == entity_id:
                 cover["window_open_action"] = action
+        try:
+            await self.async_set_config(config)
+        except ConfigError as err:
+            raise HomeAssistantError(str(err)) from err
+
+    async def async_set_cover_window_position(self, entity_id: str, position: int) -> None:
+        """Position (en %) atteinte par le volet à la fermeture du soir si une fenêtre est ouverte."""
+        config = {**self.config, "covers": [dict(c) for c in self.config["covers"]]}
+        for cover in config["covers"]:
+            if cover["entity_id"] == entity_id:
+                cover["window_open_position"] = int(position)
         try:
             await self.async_set_config(config)
         except ConfigError as err:

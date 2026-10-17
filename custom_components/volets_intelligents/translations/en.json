@@ -50,9 +50,10 @@
       },
       "window_action": {
         "state": {
-          "none": "None",
+          "block": "Do not close",
           "close": "Close completely",
-          "button": "Button (programmed position)"
+          "button": "Press a button",
+          "position": "Go to a position"
         }
       }
     },

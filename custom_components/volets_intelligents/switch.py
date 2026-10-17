@@ -28,10 +28,6 @@ async def async_setup_entry(
                 manager, entry.entry_id, "block_open_alarm_window",
                 "Volets horaire alarme et fenêtre bloquent ouverture", "mdi:shield-lock-outline",
             ),
-            ScheduleFlagSwitch(
-                manager, entry.entry_id, "block_close_window",
-                "Volets horaire fenêtre bloque fermeture", "mdi:window-open-variant",
-            ),
         ]
     )
     entry.async_on_unload(
@@ -120,7 +116,7 @@ class CoverScheduleSwitch(ManagedCoverEntity, SwitchEntity):
 
 
 class ScheduleFlagSwitch(VoletsEntity, SwitchEntity):
-    """Blocage des ordres horaires : alarme (ouverture), alarme + fenêtre (ouverture), fenêtre (fermeture)."""
+    """Blocage de l'ouverture horaire : alarme, ou alarme et fenêtre ouverte."""
 
     def __init__(
         self, manager: VoletsManager, entry_id: str, key: str, name: str, icon: str

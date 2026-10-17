@@ -17,9 +17,10 @@ from .const import (
     ACTION_OPEN,
     CLOSE_BUTTON,
     CLOSE_FULL,
+    WINDOW_ACTION_BLOCK,
     WINDOW_ACTION_BUTTON,
     WINDOW_ACTION_CLOSE,
-    WINDOW_ACTION_NONE,
+    WINDOW_ACTION_POSITION,
     KIND_GAIN,
     KIND_HEAT,
     KIND_HOLD,
@@ -54,7 +55,9 @@ class CoverRuntime:
     last_action_at: datetime | None = None
     last_command_at: datetime | None = None
     schedule_key: str | None = None  # dernier ordre horaire traité, ex. « open:2026-10-18 »
-    window_triggered: bool = False  # l'action « fenêtre ouverte » a été exécutée, fenêtre pas encore refermée
+    # Jour (ISO) de la fermeture du soir où le volet a rejoint sa position programmée parce qu'une
+    # fenêtre était ouverte ; il se ferme complètement quand elle se referme.
+    window_triggered: str | None = None
 
 
 @dataclass
@@ -94,7 +97,6 @@ class Env:
     schedule_catchup: timedelta = timedelta(minutes=180)
     schedule_block_open_alarm: bool = True
     schedule_block_open_alarm_window: bool = False
-    schedule_block_close_window: bool = True
 
 
 @dataclass
@@ -110,10 +112,12 @@ class Decision:
     # Ordre horaire (ouverture du matin / fermeture du soir) et clé à mémoriser une fois traité.
     scheduled: bool = False
     schedule_key: str | None = None
-    # Action « fenêtre ouverte » : `window_event` vaut « open » ou « closed » ; `button` est le
-    # bouton à presser (position programmée) au lieu de fermer complètement.
+    # Fermeture du soir avec une fenêtre ouverte : `window_event` vaut « open » (position
+    # programmée atteinte) ou « closed » (fenêtre refermée) ; `button` est le bouton à presser et
+    # `position` la position (en %) à atteindre, au lieu de fermer complètement.
     window_event: str | None = None
     button: str | None = None
+    position: int | None = None
 
 
 # --- aides --------------------------------------------------------------------
@@ -196,6 +200,22 @@ def schedule_due(
     return None
 
 
+def schedule_night(cover: dict[str, Any], rt: CoverRuntime, env: Env) -> bool:
+    """La fermeture horaire du soir a eu lieu et l'ouverture du matin n'a pas encore eu lieu ?
+
+    Sert à ne pas rouvrir un volet fermé le soir pour le gain solaire. Seuls comptent les ordres
+    d'hier et d'aujourd'hui : un vieil ordre non suivi d'une ouverture ne bloque pas indéfiniment.
+    """
+    if env.schedule_close_at is None or not cover.get("schedule_enabled", True):
+        return False
+    key = rt.schedule_key or ""
+    if not key.startswith("close:"):
+        return False
+    closed_day = key[len("close:"):]
+    yesterday = (env.now - timedelta(days=1)).date().isoformat()
+    return closed_day in (env.now.date().isoformat(), yesterday)
+
+
 def _scheduled(
     cover: dict[str, Any], inp: CoverInputs, env: Env, due: tuple[str, str, datetime]
 ) -> Decision:
@@ -215,7 +235,10 @@ def _scheduled(
         return Decision(
             ST_SCHEDULE, f"Fermeture horaire de {hhmm} : le volet est déjà fermé", schedule_key=key
         )
-    if env.schedule_block_close_window and inp.window_open and cover["block_close_if_open"]:
+    mode = cover.get("window_open_action", WINDOW_ACTION_BLOCK)
+    if mode != WINDOW_ACTION_BLOCK and inp.window_opened and cover["window_entities"]:
+        return _close_with_window_open(cover, inp, env, mode, key, hhmm)
+    if inp.window_open:
         return Decision(
             ST_WINDOW_OPEN,
             f"Fermeture horaire de {hhmm} bloquée : une fenêtre ou une porte est ouverte "
@@ -226,42 +249,73 @@ def _scheduled(
     )
 
 
-def _window_action(
-    cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env
-) -> Decision | None:
-    """Fenêtre ouverte : le volet rejoint sa position programmée ; fenêtre refermée : il se ferme.
-
-    La position programmée est la fermeture complète ou la pression d'un bouton (position favorite).
-    Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet. Un capteur indisponible
-    ne déclenche rien et ne referme pas le volet.
-    """
-    mode = cover.get("window_open_action", WINDOW_ACTION_NONE)
-    if mode == WINDOW_ACTION_NONE or not cover["window_entities"]:
-        return None
-    if inp.window_opened:
-        if rt.window_triggered:
-            return Decision(ST_WINDOW_OPEN, "Fenêtre ouverte : le volet reste en position programmée")
-        if mode == WINDOW_ACTION_BUTTON and cover.get("window_open_button"):
-            return Decision(
-                ST_WINDOW_OPEN,
-                "Fenêtre ouverte : le volet rejoint sa position programmée (bouton)",
-                ACTION_CLOSE,
-                window_event="open",
-                button=cover["window_open_button"],
-            )
-        if is_fully_closed(inp):
-            return Decision(
-                ST_WINDOW_OPEN, "Fenêtre ouverte : le volet est déjà fermé", window_event="open"
-            )
+def _close_with_window_open(
+    cover: dict[str, Any], inp: CoverInputs, env: Env, mode: str, key: str, hhmm: str
+) -> Decision:
+    """Fermeture du soir alors qu'une fenêtre est ouverte, selon le choix du volet."""
+    if mode == WINDOW_ACTION_CLOSE:
+        return Decision(
+            ST_SCHEDULE,
+            f"Fermeture horaire de {hhmm} : le volet se ferme malgré la fenêtre ouverte",
+            ACTION_CLOSE,
+            scheduled=True,
+            schedule_key=key,
+        )
+    if mode == WINDOW_ACTION_BUTTON and cover.get("window_open_button"):
         return Decision(
             ST_WINDOW_OPEN,
-            "Fenêtre ouverte : le volet se ferme",
+            f"Fermeture horaire de {hhmm} : fenêtre ouverte, le volet rejoint sa position "
+            "programmée (bouton)",
             ACTION_CLOSE,
-            plain=True,
+            scheduled=True,
+            schedule_key=key,
             window_event="open",
+            button=cover["window_open_button"],
         )
+    if mode == WINDOW_ACTION_POSITION:
+        target = cover.get("window_open_position", 30)
+        reached = inp.position is not None and inp.position <= target + env.tolerance
+        return Decision(
+            ST_WINDOW_OPEN,
+            f"Fermeture horaire de {hhmm} : fenêtre ouverte, le volet va à {target} %"
+            if not reached
+            else f"Fermeture horaire de {hhmm} : fenêtre ouverte, le volet est déjà à {target} % ou moins",
+            None if reached else ACTION_CLOSE,
+            scheduled=True,
+            schedule_key=key,
+            window_event="open",
+            position=None if reached else target,
+        )
+    return Decision(
+        ST_WINDOW_OPEN, f"Fermeture horaire de {hhmm} bloquée : le bouton n'est pas choisi"
+    )
+
+
+def window_hold_active(rt: CoverRuntime, env: Env) -> bool:
+    """Le volet attend-il la fermeture de sa fenêtre pour se fermer complètement ?
+
+    L'attente s'arrête à l'ouverture horaire du lendemain (ou le lendemain si les horaires sont
+    désactivés), pour ne pas refermer en plein jour un volet que l'on vient d'ouvrir.
+    """
     if not rt.window_triggered:
+        return False
+    if rt.window_triggered >= env.now.date().isoformat():
+        return True
+    return env.schedule_open_at is not None and env.now < env.schedule_open_at
+
+
+def _window_followup(
+    cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env
+) -> Decision | None:
+    """Suite d'une fermeture du soir avec fenêtre ouverte : fermeture complète à la fermeture de la fenêtre.
+
+    Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet. Un capteur indisponible
+    ne referme pas le volet.
+    """
+    if not window_hold_active(rt, env):
         return None
+    if inp.window_opened:
+        return Decision(ST_WINDOW_OPEN, "Fenêtre ouverte : le volet reste en position programmée")
     if not inp.window_known:
         return Decision(ST_WINDOW_OPEN, "Capteur de fenêtre indisponible : le volet reste en place")
     if is_fully_closed(inp):
@@ -346,20 +400,20 @@ def _decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env)
     if env.mode != MODE_AUTO:
         return Decision(ST_MODE_OFF, "La gestion automatique est arrêtée")
 
-    if not env.grace_active:
-        window_decision = _window_action(cover, inp, rt, env)
-        if window_decision is not None:
-            return window_decision
-
-    due = None if env.grace_active else schedule_due(cover, rt, env)
-    if due is not None:
-        return _scheduled(cover, inp, env, due)
-
+    # Un scénario « désactivé » coupe tout, horaires compris.
     kind = env.scenario.get("kind", KIND_OFF)
     if kind == KIND_OFF:
         return Decision(ST_SCENARIO_OFF, "Le scénario actif ne commande aucun volet")
     if env.grace_active:
         return Decision(ST_GRACE, "Délai de sécurité après le démarrage")
+
+    window_decision = _window_followup(cover, inp, rt, env)
+    if window_decision is not None:
+        return window_decision
+
+    due = schedule_due(cover, rt, env)
+    if due is not None:
+        return _scheduled(cover, inp, env, due)
 
     if cover["close_method"] == CLOSE_BUTTON:
         # Bouton favori : la position atteinte est celle programmée sur le bouton, pas
@@ -394,6 +448,12 @@ def _decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env)
     if kind == KIND_HOLD:
         return _hold(cover, inp, rt, env, shaded_now, shaded_by_us)
     if kind == KIND_GAIN:
+        if schedule_night(cover, rt, env):
+            return Decision(
+                ST_SCHEDULE,
+                "Fermeture horaire passée : le volet n'est pas ouvert pour le gain solaire "
+                "avant l'ouverture du matin",
+            )
         return _gain(cover, inp, rt, env)
     return Decision(ST_SCENARIO_OFF, "Scénario inconnu")
 

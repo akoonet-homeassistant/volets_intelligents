@@ -50,9 +50,10 @@
       },
       "window_action": {
         "state": {
-          "none": "Aucune",
-          "close": "Fermeture complète",
-          "button": "Bouton (position programmée)"
+          "block": "Ne pas fermer",
+          "close": "Fermer complètement",
+          "button": "Presser un bouton",
+          "position": "Aller à une position"
         }
       }
     },

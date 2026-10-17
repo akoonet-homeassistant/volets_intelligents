@@ -166,7 +166,6 @@ def ws_get_entities(hass: HomeAssistant, connection, msg: dict[str, Any]) -> Non
                 "close_at": find("sensor", "schedule_close_at"),
                 "block_open_alarm": find("switch", "schedule_block_open_alarm"),
                 "block_open_alarm_window": find("switch", "schedule_block_open_alarm_window"),
-                "block_close_window": find("switch", "schedule_block_close_window"),
             },
             "thresholds": [
                 {"scenario": scenario, "key": key, "entity_id": find("number", f"{scenario}_{key}")}
@@ -191,6 +190,7 @@ def ws_get_entities(hass: HomeAssistant, connection, msg: dict[str, Any]) -> Non
                     "status": find("sensor", f"{cover['entity_id']}_status"),
                     "schedule": find("switch", f"{cover['entity_id']}_schedule"),
                     "window_action": find("select", f"{cover['entity_id']}_window_action"),
+                    "window_position": find("number", f"{cover['entity_id']}_window_position"),
                 }
                 for cover in manager.config["covers"]
             ],
