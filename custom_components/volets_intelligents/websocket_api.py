@@ -154,6 +154,17 @@ def ws_get_entities(hass: HomeAssistant, connection, msg: dict[str, Any]) -> Non
                 "end_mode": find("select", "window_end_mode"),
                 "sunset_offset": find("number", "window_sunset_offset"),
             },
+            "schedule": {
+                "enabled": find("switch", "schedule_enabled"),
+                "open_mode": find("select", "schedule_open_mode"),
+                "open_time": find("time", "schedule_open_time"),
+                "open_offset": find("number", "schedule_open_offset_minutes"),
+                "open_at": find("sensor", "schedule_open_at"),
+                "close_mode": find("select", "schedule_close_mode"),
+                "close_time": find("time", "schedule_close_time"),
+                "close_offset": find("number", "schedule_close_offset_minutes"),
+                "close_at": find("sensor", "schedule_close_at"),
+            },
             "thresholds": [
                 {"scenario": scenario, "key": key, "entity_id": find("number", f"{scenario}_{key}")}
                 for scenario, key, _label in SCENARIO_THRESHOLDS
@@ -175,6 +186,7 @@ def ws_get_entities(hass: HomeAssistant, connection, msg: dict[str, Any]) -> Non
                     "facade": cover["facade"],
                     "switch": find("switch", f"{cover['entity_id']}_auto"),
                     "status": find("sensor", f"{cover['entity_id']}_status"),
+                    "schedule": find("switch", f"{cover['entity_id']}_schedule"),
                 }
                 for cover in manager.config["covers"]
             ],

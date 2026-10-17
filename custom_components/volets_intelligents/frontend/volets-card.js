@@ -55,6 +55,7 @@ const I18N = {
     "status.no_data": "Données manquantes",
     "status.paused": "En pause",
     "status.window_open": "Fenêtre ouverte",
+    "status.schedule": "Horaire",
     "status.wind_protected": "Protégé du vent",
     "status.shaded": "Protégé du soleil",
     "status.watching": "Surveillance",
@@ -105,6 +106,7 @@ const I18N = {
     "status.no_data": "Missing data",
     "status.paused": "Paused",
     "status.window_open": "Window open",
+    "status.schedule": "Schedule",
     "status.wind_protected": "Wind protection",
     "status.shaded": "Sun protection",
     "status.watching": "Watching",
@@ -127,7 +129,7 @@ const SCENARIO_IDS = ["summer", "winter", "vacation", "off"];
 const STATUS_COLORS = {
   disabled: "grey", mode_manual: "grey", mode_off: "grey", scenario_off: "grey",
   grace: "grey", outside_window: "grey", no_data: "red", paused: "blue",
-  window_open: "purple", wind_protected: "purple", shaded: "orange",
+  schedule: "blue", window_open: "purple", wind_protected: "purple", shaded: "orange",
   watching: "green", cooldown: "grey", unavailable: "red",
 };
 

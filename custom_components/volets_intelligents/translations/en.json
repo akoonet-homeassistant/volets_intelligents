@@ -41,6 +41,12 @@
           "entity": "Read from an entity",
           "sunset": "Sunset"
         }
+      },
+      "schedule_mode": {
+        "state": {
+          "fixed": "Fixed time",
+          "sun": "Sunrise / sunset"
+        }
       }
     },
     "sensor": {
@@ -59,7 +65,8 @@
           "shaded": "Sun protected",
           "watching": "Watching",
           "cooldown": "Cooldown",
-          "unavailable": "Unavailable"
+          "unavailable": "Unavailable",
+          "schedule": "Schedule"
         }
       }
     }

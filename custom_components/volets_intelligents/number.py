@@ -19,6 +19,14 @@ async def async_setup_entry(
     async_add_entities(
         [
             SunsetOffsetNumber(manager, entry.entry_id),
+            ScheduleOffsetNumber(
+                manager, entry.entry_id, "open_offset_minutes",
+                "Volets horaire ouverture décalage lever", "mdi:weather-sunset-up",
+            ),
+            ScheduleOffsetNumber(
+                manager, entry.entry_id, "close_offset_minutes",
+                "Volets horaire fermeture décalage coucher", "mdi:weather-sunset-down",
+            ),
             *(
                 ScenarioThresholdNumber(manager, entry.entry_id, scenario, key, label)
                 for scenario, key, label in SCENARIO_THRESHOLDS
@@ -59,6 +67,32 @@ class SunsetOffsetNumber(VoletsEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self.manager.async_set_window_setting("sunset_offset_minutes", int(value))
+
+
+class ScheduleOffsetNumber(VoletsEntity, NumberEntity):
+    """Décalage de l'ouverture (lever du soleil) ou de la fermeture (coucher), de -60 à +60 min."""
+
+    _attr_native_min_value = -60
+    _attr_native_max_value = 60
+    _attr_native_step = 5
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_mode = NumberMode.BOX
+
+    def __init__(
+        self, manager: VoletsManager, entry_id: str, key: str, name: str, icon: str
+    ) -> None:
+        super().__init__(manager, entry_id)
+        self._key = key
+        self._attr_name = name
+        self._attr_icon = icon
+        self._attr_unique_id = f"{entry_id}_schedule_{key}"
+
+    @property
+    def native_value(self) -> float:
+        return self.manager.config["settings"]["schedule"][self._key]
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.manager.async_set_schedule_setting(self._key, int(value))
 
 
 class ScenarioThresholdNumber(VoletsEntity, NumberEntity):

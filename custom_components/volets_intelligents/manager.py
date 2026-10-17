@@ -18,6 +18,7 @@ from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
+    async_track_point_in_time,
     async_track_state_change_event,
     async_track_time_interval,
 )
@@ -37,6 +38,8 @@ from .const import (
     MODE_AUTO,
     MODES,
     MOTION_GRACE_SECONDS,
+    SCHEDULE_CATCHUP_MINUTES,
+    SCHEDULE_SUN,
     SETTLE_SECONDS,
     SIGNAL_CONFIG_CHANGED,
     SIGNAL_STATUS_UPDATED,
@@ -92,6 +95,7 @@ class VoletsManager:
         self._last_in_window = False
         self._window_end: datetime | None = None
         self._grace_unsub: Callable[[], None] | None = None
+        self._schedule_unsub: Callable[[], None] | None = None
         self._windows_key: tuple | None = None
         self._windows_cache: dict[str, list[dict[str, str]]] = {}
         self._stopped = False
@@ -119,6 +123,7 @@ class VoletsManager:
                 paused_until=_parse_dt(data.get("paused_until")),
                 last_action=data.get("last_action"),
                 last_action_at=_parse_dt(data.get("last_action_at")),
+                schedule_key=data.get("schedule_key"),
             )
 
     async def async_start(self) -> None:
@@ -145,6 +150,9 @@ class VoletsManager:
         if self._grace_unsub:
             self._grace_unsub()
             self._grace_unsub = None
+        if self._schedule_unsub:
+            self._schedule_unsub()
+            self._schedule_unsub = None
         if self._debouncer:
             self._debouncer.async_shutdown()
             self._debouncer = None
@@ -474,6 +482,27 @@ class VoletsManager:
             start_dt, end_dt = at(start), at(end, 1)
         return start_dt <= now < end_dt, start_dt, end_dt
 
+    def _compute_schedule(self, now: datetime) -> tuple[datetime | None, datetime | None]:
+        """Heures d'ouverture et de fermeture du jour (None, None si la fonction est désactivée).
+
+        Mode « soleil » : lever (ouverture) ou coucher (fermeture) du soleil, décalé de -60 à +60 min.
+        Si l'heure du soleil est indisponible, l'heure fixe saisie sert de repli.
+        """
+        s = self.config["settings"]["schedule"]
+        if not s["enabled"]:
+            return None, None
+
+        def moment(kind: str, event: str) -> datetime:
+            if s[f"{kind}_mode"] == SCHEDULE_SUN:
+                found = get_astral_event_date(self.hass, event, now.date())
+                if found is not None:
+                    shifted = dt_util.as_local(found) + timedelta(minutes=s[f"{kind}_offset_minutes"])
+                    return shifted.replace(second=0, microsecond=0)
+            at = _parse_hhmm(s[f"{kind}_time"])
+            return now.replace(hour=at.hour, minute=at.minute, second=0, microsecond=0)
+
+        return moment("open", "sunrise"), moment("close", "sunset")
+
     def effective_scenario(self, now: datetime) -> str:
         auto = self.config["settings"]["auto_scenario"]
         if auto["enabled"]:
@@ -497,6 +526,7 @@ class VoletsManager:
         in_window, start_dt, end_dt = self._compute_window(now)
         self._last_in_window = in_window
         self._window_end = end_dt
+        schedule_open, schedule_close = self._compute_schedule(now)
         outdoor_raw, outdoor = self._outdoor()
         wind, wind_exceeded = self._update_wind()
         sunny = self._is_sunny()
@@ -514,6 +544,9 @@ class VoletsManager:
             alarm_armed=self._alarm_armed(),
             tolerance=settings["position_tolerance"],
             min_move=timedelta(minutes=settings["min_move_interval_minutes"]),
+            schedule_open_at=schedule_open,
+            schedule_close_at=schedule_close,
+            schedule_catchup=timedelta(minutes=SCHEDULE_CATCHUP_MINUTES),
         )
 
         sun = self._sun_now(now)
@@ -546,7 +579,11 @@ class VoletsManager:
             if decision.forget:
                 rt.shaded_by_us = False
             if decision.action and not self._already_sent(rt, decision.action, now):
-                await self._execute(cover, decision, rt, now)
+                if await self._execute(cover, decision, rt, now) and decision.schedule_key:
+                    rt.schedule_key = decision.schedule_key
+                    rt.paused_until = None  # un ordre horaire met fin à une pause manuelle
+            elif decision.schedule_key and not decision.action:
+                rt.schedule_key = decision.schedule_key  # rien à faire : déjà dans l'état voulu
             covers_status.append(self._cover_status(cover, inp, rt, decision))
 
         self.status = {
@@ -561,6 +598,11 @@ class VoletsManager:
             "window_start_at": _iso(start_dt),
             "window_end_at": _iso(end_dt),
             "grace_active": grace,
+            "schedule_enabled": settings["schedule"]["enabled"],
+            "schedule_open_at": _iso(schedule_open),
+            "schedule_close_at": _iso(schedule_close),
+            "schedule_open": schedule_open.strftime("%H:%M") if schedule_open else None,
+            "schedule_close": schedule_close.strftime("%H:%M") if schedule_close else None,
             "outdoor_temp": outdoor_raw,
             "outdoor_effective": outdoor,
             "wind": wind,
@@ -573,7 +615,27 @@ class VoletsManager:
             "version": CONFIG_VERSION,
         }
         self._save_runtime()
+        self._arm_schedule(now, schedule_open, schedule_close)
         async_dispatcher_send(self.hass, SIGNAL_STATUS_UPDATED)
+
+    def _arm_schedule(
+        self, now: datetime, open_at: datetime | None, close_at: datetime | None
+    ) -> None:
+        """Programme une évaluation à la prochaine heure d'ouverture / fermeture (sans attendre l'intervalle)."""
+        if self._schedule_unsub:
+            self._schedule_unsub()
+            self._schedule_unsub = None
+        upcoming = [t for t in (open_at, close_at) if t is not None and t > now]
+        if not upcoming or self._stopped:
+            return
+
+        async def fire(_when: datetime) -> None:
+            self._schedule_unsub = None
+            await self.async_evaluate()
+
+        self._schedule_unsub = async_track_point_in_time(
+            self.hass, fire, min(upcoming) + timedelta(seconds=1)
+        )
 
     def _cover_inputs(
         self,
@@ -623,6 +685,7 @@ class VoletsManager:
             "name": cover["name"],
             "facade": cover["facade"],
             "enabled": cover["enabled"],
+            "schedule_enabled": cover["schedule_enabled"],
             "status": decision.status,
             "reason": decision.reason,
             "position": inp.position,
@@ -661,11 +724,14 @@ class VoletsManager:
 
     async def _execute(
         self, cover: dict[str, Any], decision: Decision, rt: CoverRuntime, now: datetime
-    ) -> None:
+    ) -> bool:
+        """Envoie l'ordre ; retourne False s'il a été refusé (il sera retenté)."""
         context = Context()
         rt.last_command_at = now  # avant l'appel : évite une fausse détection manuelle
         try:
-            if decision.plain:
+            if decision.scheduled and decision.action == ACTION_CLOSE:
+                await self._send_plain(cover, ACTION_CLOSE, context)  # fermeture complète du soir
+            elif decision.plain:
                 await self._send_plain(cover, decision.action, context)
             elif decision.action == ACTION_CLOSE:
                 await self._send_close(cover, context)
@@ -675,11 +741,14 @@ class VoletsManager:
             _LOGGER.warning(
                 "Commande %s refusée pour %s : %s", decision.action, cover["entity_id"], err
             )
-            return
-        rt.shaded_by_us = decision.action == ACTION_CLOSE and not decision.plain
+            return False
+        rt.shaded_by_us = (
+            decision.action == ACTION_CLOSE and not decision.plain and not decision.scheduled
+        )
         rt.last_action = decision.action
         rt.last_action_at = now
         _LOGGER.info("%s : %s (%s)", cover["entity_id"], decision.action, decision.reason)
+        return True
 
     @staticmethod
     def _already_sent(rt: CoverRuntime, action: str, now: datetime) -> bool:
@@ -782,6 +851,23 @@ class VoletsManager:
         except ConfigError as err:
             raise HomeAssistantError(str(err)) from err
 
+    async def async_set_schedule_setting(self, key: str, value: Any) -> None:
+        """Modifie un réglage des horaires (enabled, open_mode, open_time, open_offset_minutes, close_…)."""
+        config = copy.deepcopy(self.config)
+        config["settings"]["schedule"][key] = value
+        try:
+            await self.async_set_config(config)
+        except ConfigError as err:
+            raise HomeAssistantError(str(err)) from err
+
+    async def async_set_cover_schedule(self, entity_id: str, enabled: bool) -> None:
+        """Inclut ou exclut un volet des ouvertures / fermetures horaires."""
+        config = {**self.config, "covers": [dict(c) for c in self.config["covers"]]}
+        for cover in config["covers"]:
+            if cover["entity_id"] == entity_id:
+                cover["schedule_enabled"] = enabled
+        await self.async_set_config(config)
+
     async def async_set_scenario_setting(self, scenario: str, key: str, value: Any) -> None:
         """Modifie un seuil d'un scénario (ex. close_outdoor du scénario « summer »)."""
         config = copy.deepcopy(self.config)
@@ -858,6 +944,7 @@ class VoletsManager:
                     "paused_until": _iso(rt.paused_until),
                     "last_action": rt.last_action,
                     "last_action_at": _iso(rt.last_action_at),
+                    "schedule_key": rt.schedule_key,
                 }
                 for entity_id, rt in self.runtime.items()
             },

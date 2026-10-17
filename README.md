@@ -58,6 +58,24 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
   `input_datetime`, `input_text`).
 - Réglable depuis le panneau et depuis vos tableaux de bord (entités `time`, `select` et `number` de la plage).
 
+### Ouverture et fermeture horaires
+
+- **Ouverture du matin et fermeture du soir** de tous les volets, à **heure fixe** ou **selon le soleil** :
+  lever du soleil pour l'ouverture, coucher du soleil pour la fermeture, avec un **décalage de -60 à +60 minutes
+  par pas de 5**. Chaque moment (ouverture, fermeture) a son propre mode.
+- **Désactivable volet par volet** (case « Ouverture / fermeture horaires » dans l'onglet Volets, ou interrupteur
+  `switch.volets_<nom>_horaires`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
+- L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
+  position n'est pas touché.
+- **Fenêtre ouverte** : la fermeture est bloquée si le volet a un capteur de fenêtre ouverte et l'option « Ne pas
+  fermer si une fenêtre est ouverte ». **Alarme** : l'ouverture est bloquée selon les réglages du scénario actif
+  (« ne pas ouvrir si l'alarme est activée »). Un ordre bloqué est retenté à chaque évaluation pendant 3 heures,
+  puis abandonné pour la journée.
+- Les horaires sont indépendants du scénario et de la plage active. Ils sont ignorés quand le mode global est
+  « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
+  prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
+  même après un redémarrage de Home Assistant.
+
 ### Façades et soleil
 
 - **Quatre façades, orientation de la maison** : nord, est, sud, ouest par défaut (renommables,
@@ -247,6 +265,20 @@ nom de votre volet.
 | `select.volets_reglage_plage_mode_fin` | select | **Réglage** du mode de fin : `fixed` (heure fixe), `entity` (lue dans une entité), `sunset` (coucher du soleil). Le mode `entity` demande qu'une entité de fin soit déjà choisie dans le panneau, sinon le changement est refusé. |
 | `number.volets_reglage_plage_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -240 à 240, utile en mode `sunset`). |
 
+### Ouverture et fermeture horaires
+
+| Entité | Type | Usage |
+|---|---|---|
+| `switch.volets_horaires` | switch | **Réglage** : active les ouvertures et fermetures horaires de tous les volets. |
+| `select.volets_horaire_ouverture_mode` | select | **Réglage** du mode d'ouverture : `fixed` (heure fixe) ou `sun` (lever du soleil). |
+| `time.volets_horaire_ouverture_heure` | time | **Réglage** de l'heure d'ouverture fixe (aussi utilisée en repli si l'heure du soleil est indisponible). |
+| `number.volets_horaire_ouverture_decalage_lever` | number (min) | **Réglage** du décalage par rapport au lever du soleil (de -60 à 60, par pas de 5, utile en mode `sun`). |
+| `sensor.volets_ouverture_prevue` | sensor (horodatage) | Heure d'ouverture du jour (vide si les horaires sont désactivés). |
+| `select.volets_horaire_fermeture_mode` | select | **Réglage** du mode de fermeture : `fixed` ou `sun` (coucher du soleil). |
+| `time.volets_horaire_fermeture_heure` | time | **Réglage** de l'heure de fermeture fixe (repli compris). |
+| `number.volets_horaire_fermeture_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -60 à 60, par pas de 5). |
+| `sensor.volets_fermeture_prevue` | sensor (horodatage) | Heure de fermeture du jour (vide si les horaires sont désactivés). |
+
 ### Seuils des scénarios
 
 | Entité | Type | Usage |
@@ -282,6 +314,7 @@ rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
 | Entité | Type | Description |
 |---|---|---|
 | `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
+| `switch.volets_<nom>_horaires` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet des ouvertures et fermetures horaires. |
 | `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
 
 Valeurs du statut (`sensor.volets_<nom>_statut`) :
@@ -291,6 +324,7 @@ Valeurs du statut (`sensor.volets_<nom>_statut`) :
 | `shaded` | Protégé du soleil | Le volet a été abaissé par l'intégration. |
 | `watching` | Surveillance | Rien à faire pour le moment. |
 | `paused` | En pause | Action manuelle détectée, ou pause demandée. |
+| `schedule` | Horaire | Ouverture ou fermeture horaire en cours (ou en attente : alarme). |
 | `window_open` | Fenêtre ouverte | Fermeture bloquée (ou capteur de fenêtre indisponible). |
 | `wind_protected` | Protégé du vent | Mis en sécurité à cause du vent. |
 | `cooldown` | Anti-usure | Attente de l'intervalle minimal entre deux mouvements. |

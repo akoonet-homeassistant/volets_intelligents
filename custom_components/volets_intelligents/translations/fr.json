@@ -41,6 +41,12 @@
           "entity": "Lue dans une entité",
           "sunset": "Coucher du soleil"
         }
+      },
+      "schedule_mode": {
+        "state": {
+          "fixed": "Heure fixe",
+          "sun": "Lever / coucher du soleil"
+        }
       }
     },
     "sensor": {
@@ -59,7 +65,8 @@
           "shaded": "Protégé du soleil",
           "watching": "Surveillance",
           "cooldown": "Anti-usure",
-          "unavailable": "Indisponible"
+          "unavailable": "Indisponible",
+          "schedule": "Horaire"
         }
       }
     }

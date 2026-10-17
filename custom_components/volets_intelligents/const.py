@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "volets_intelligents"
-VERSION = "2026.10.9"
+VERSION = "2026.10.10"
 NAME = "Volets Intelligents"
 
 # Fichiers statiques du frontend
@@ -50,6 +50,14 @@ END_ENTITY = "entity"
 END_FIXED = "fixed"
 END_SUNSET = "sunset"
 
+# Horaires d'ouverture et de fermeture (heure fixe ou lever / coucher du soleil)
+SCHEDULE_FIXED = "fixed"
+SCHEDULE_SUN = "sun"
+SCHEDULE_MODES = (SCHEDULE_FIXED, SCHEDULE_SUN)
+# Un ordre horaire non exécuté (fenêtre ouverte, alarme, volet indisponible…) est retenté
+# jusqu'à ce délai après l'heure prévue, puis abandonné.
+SCHEDULE_CATCHUP_MINUTES = 180
+
 # Statuts d'un volet
 ST_DISABLED = "disabled"
 ST_MODE_MANUAL = "mode_manual"
@@ -65,6 +73,7 @@ ST_SHADED = "shaded"
 ST_WATCHING = "watching"
 ST_COOLDOWN = "cooldown"
 ST_UNAVAILABLE = "unavailable"
+ST_SCHEDULE = "schedule"
 STATUSES = (
     ST_DISABLED,
     ST_MODE_MANUAL,
@@ -80,6 +89,7 @@ STATUSES = (
     ST_WATCHING,
     ST_COOLDOWN,
     ST_UNAVAILABLE,
+    ST_SCHEDULE,
 )
 
 # Actions

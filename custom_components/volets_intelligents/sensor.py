@@ -33,6 +33,8 @@ async def async_setup_entry(
             OutdoorEffectiveSensor(manager, entry.entry_id),
             WindowTimeSensor(manager, entry.entry_id, "start", "Volets plage début"),
             WindowTimeSensor(manager, entry.entry_id, "end", "Volets plage fin"),
+            ScheduleTimeSensor(manager, entry.entry_id, "open", "Volets ouverture prévue"),
+            ScheduleTimeSensor(manager, entry.entry_id, "close", "Volets fermeture prévue"),
         ]
     )
     for kind, label in (("start", "début"), ("end", "fin")):
@@ -121,6 +123,24 @@ class WindowTimeSensor(VoletsEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         raw = self.manager.status.get(f"window_{self._kind}_at")
+        return dt_util.parse_datetime(raw) if raw else None
+
+
+class ScheduleTimeSensor(VoletsEntity, SensorEntity):
+    """Heure d'ouverture ou de fermeture horaire du jour (vide si les horaires sont désactivés)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-outline"
+
+    def __init__(self, manager: VoletsManager, entry_id: str, kind: str, name: str) -> None:
+        super().__init__(manager, entry_id)
+        self._kind = kind
+        self._attr_name = name
+        self._attr_unique_id = f"{entry_id}_schedule_{kind}_at"
+
+    @property
+    def native_value(self) -> datetime | None:
+        raw = self.manager.status.get(f"schedule_{self._kind}_at")
         return dt_util.parse_datetime(raw) if raw else None
 
 

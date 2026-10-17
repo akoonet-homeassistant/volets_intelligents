@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.10.10
+
+- Nouvelle fonction : ouverture du matin et fermeture du soir de tous les volets, à heure fixe ou selon le lever et le coucher du soleil, avec un décalage de -60 à +60 minutes par pas de 5 (réglages dans l'onglet Réglages, section « Ouverture et fermeture horaires »). Désactivée par défaut ; désactivable globalement et volet par volet (case dans l'onglet Volets).
+- L'ouverture amène le volet à sa position d'ouverture, la fermeture est complète. La fermeture reste bloquée par une fenêtre ouverte (option du volet) et l'ouverture par l'alarme (réglages du scénario actif). Un ordre bloqué est retenté pendant 3 heures. Chaque ordre n'est exécuté qu'une fois par jour, même après un redémarrage.
+- Nouveau statut de volet `schedule` (« Horaire »).
+- Nouvelles entités, ajoutées à l'onglet Entités et au README : `switch.volets_horaires`, `select.volets_horaire_ouverture_mode`, `select.volets_horaire_fermeture_mode`, `time.volets_horaire_ouverture_heure`, `time.volets_horaire_fermeture_heure`, `number.volets_horaire_ouverture_decalage_lever`, `number.volets_horaire_fermeture_decalage_coucher`, `sensor.volets_ouverture_prevue`, `sensor.volets_fermeture_prevue`, et `switch.volets_<nom>_horaires` pour chaque volet.
+
 ## 2026.10.9
 
 - Entité « Volets scénario » : le sélecteur affiche maintenant le nom que vous avez saisi pour chaque scénario (« Absents » au lieu de « Vacances » après renommage), dans toutes les cartes Home Assistant (vue Volets, tuile, entités). Les options et l'état de l'entité sont ces noms. `select.select_option` accepte aussi les anciennes clés (`summer`, `winter`, `vacation`, `off`), mais une automatisation ou un template qui teste l'état `vacation` doit être mise à jour avec le nouveau nom. Deux scénarios de même nom sont distingués par leur clé entre parenthèses.

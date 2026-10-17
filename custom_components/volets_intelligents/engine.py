@@ -32,6 +32,7 @@ from .const import (
     ST_OUTSIDE,
     ST_PAUSED,
     ST_SCENARIO_OFF,
+    ST_SCHEDULE,
     ST_SHADED,
     ST_UNAVAILABLE,
     ST_WATCHING,
@@ -49,6 +50,7 @@ class CoverRuntime:
     last_action: str | None = None
     last_action_at: datetime | None = None
     last_command_at: datetime | None = None
+    schedule_key: str | None = None  # dernier ordre horaire traité, ex. « open:2026-10-18 »
 
 
 @dataclass
@@ -80,6 +82,10 @@ class Env:
     alarm_armed: bool = False
     tolerance: int = 3
     min_move: timedelta = timedelta(minutes=10)
+    # Horaires d'ouverture / fermeture du jour (None : fonction désactivée)
+    schedule_open_at: datetime | None = None
+    schedule_close_at: datetime | None = None
+    schedule_catchup: timedelta = timedelta(minutes=180)
 
 
 @dataclass
@@ -92,6 +98,9 @@ class Decision:
     plain: bool = False
     # L'intégration abandonne son rôle sur ce volet (elle ne le remontera plus).
     forget: bool = False
+    # Ordre horaire (ouverture du matin / fermeture du soir) et clé à mémoriser une fois traité.
+    scheduled: bool = False
+    schedule_key: str | None = None
 
 
 # --- aides --------------------------------------------------------------------
@@ -149,6 +158,61 @@ def _cooldown(rt: CoverRuntime, env: Env) -> bool:
     return env.now - rt.last_command_at < env.min_move
 
 
+def schedule_due(
+    cover: dict[str, Any], rt: CoverRuntime, env: Env
+) -> tuple[str, str, datetime] | None:
+    """Ordre horaire à traiter pour ce volet : (action, clé, heure prévue), ou None.
+
+    La fermeture du soir est due de l'heure de fermeture jusqu'à `schedule_catchup` plus tard,
+    l'ouverture du matin de l'heure d'ouverture jusqu'à la fermeture (dans la même limite).
+    Une fois traité, l'ordre est mémorisé (`rt.schedule_key`) : il n'est pas rejoué, même après
+    un redémarrage.
+    """
+    open_at, close_at = env.schedule_open_at, env.schedule_close_at
+    if open_at is None or close_at is None or not cover.get("schedule_enabled", True):
+        return None
+    if open_at >= close_at:
+        return None
+    day = env.now.date().isoformat()
+    if close_at <= env.now < close_at + env.schedule_catchup:
+        key = f"close:{day}"
+        return (ACTION_CLOSE, key, close_at) if rt.schedule_key != key else None
+    if open_at <= env.now < min(open_at + env.schedule_catchup, close_at):
+        key = f"open:{day}"
+        return (ACTION_OPEN, key, open_at) if rt.schedule_key != key else None
+    return None
+
+
+def _scheduled(
+    cover: dict[str, Any], inp: CoverInputs, env: Env, due: tuple[str, str, datetime]
+) -> Decision:
+    """Ouverture du matin ou fermeture du soir. Un ordre bloqué est retenté à chaque évaluation."""
+    action, key, at = due
+    hhmm = at.strftime("%H:%M")
+    if action == ACTION_OPEN:
+        if is_open(cover, inp, env.tolerance):
+            return Decision(
+                ST_SCHEDULE, f"Ouverture horaire de {hhmm} : le volet est déjà ouvert",
+                schedule_key=key,
+            )
+        return Decision(
+            ST_SCHEDULE, f"Ouverture horaire de {hhmm}", ACTION_OPEN, scheduled=True, schedule_key=key
+        )
+    if is_fully_closed(inp):
+        return Decision(
+            ST_SCHEDULE, f"Fermeture horaire de {hhmm} : le volet est déjà fermé", schedule_key=key
+        )
+    if inp.window_open and cover["block_close_if_open"]:
+        return Decision(
+            ST_WINDOW_OPEN,
+            f"Fermeture horaire de {hhmm} bloquée : une fenêtre ou une porte est ouverte "
+            "(ou son capteur est indisponible). Nouvel essai dès qu'elle est fermée",
+        )
+    return Decision(
+        ST_SCHEDULE, f"Fermeture horaire de {hhmm}", ACTION_CLOSE, scheduled=True, schedule_key=key
+    )
+
+
 def _exposure_text(inp: CoverInputs) -> str:
     if inp.exposed:
         return f"Soleil sur la façade {inp.facade_name}"
@@ -182,6 +246,7 @@ def decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env) 
             )
     if (
         decision.action == ACTION_OPEN
+        and not decision.scheduled
         and is_fully_closed(inp)
         and env.scenario_key not in cover.get("allow_open_closed_in", [])
         and not (rt.shaded_by_us and protection_is_full_close(cover))
@@ -209,6 +274,10 @@ def _decide(cover: dict[str, Any], inp: CoverInputs, rt: CoverRuntime, env: Env)
         return Decision(ST_MODE_MANUAL, "Le mode global est « manuel »")
     if env.mode != MODE_AUTO:
         return Decision(ST_MODE_OFF, "La gestion automatique est arrêtée")
+
+    due = None if env.grace_active else schedule_due(cover, rt, env)
+    if due is not None:
+        return _scheduled(cover, inp, env, due)
 
     kind = env.scenario.get("kind", KIND_OFF)
     if kind == KIND_OFF:

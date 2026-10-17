@@ -22,6 +22,12 @@ async def async_setup_entry(
             ModeSelect(manager, entry.entry_id),
             ScenarioSelect(manager, entry.entry_id),
             WindowEndModeSelect(manager, entry.entry_id),
+            ScheduleModeSelect(
+                manager, entry.entry_id, "open_mode", "Volets horaire ouverture mode", "mdi:weather-sunset-up"
+            ),
+            ScheduleModeSelect(
+                manager, entry.entry_id, "close_mode", "Volets horaire fermeture mode", "mdi:weather-sunset-down"
+            ),
         ]
     )
 
@@ -107,3 +113,26 @@ class WindowEndModeSelect(VoletsEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         await self.manager.async_set_window_setting("end_mode", option)
+
+
+class ScheduleModeSelect(VoletsEntity, SelectEntity):
+    """Ouverture / fermeture à heure fixe (`fixed`) ou selon le lever / coucher du soleil (`sun`)."""
+
+    _attr_translation_key = "schedule_mode"
+    _attr_options = ["fixed", "sun"]
+
+    def __init__(
+        self, manager: VoletsManager, entry_id: str, key: str, name: str, icon: str
+    ) -> None:
+        super().__init__(manager, entry_id)
+        self._key = key
+        self._attr_name = name
+        self._attr_icon = icon
+        self._attr_unique_id = f"{entry_id}_schedule_{key}"
+
+    @property
+    def current_option(self) -> str:
+        return self.manager.config["settings"]["schedule"][self._key]
+
+    async def async_select_option(self, option: str) -> None:
+        await self.manager.async_set_schedule_setting(self._key, option)

@@ -1,4 +1,4 @@
-"""Heures réglables de la plage active (début, fin fixe)."""
+"""Heures réglables : plage active (début, fin fixe) et horaires d'ouverture / fermeture."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ async def async_setup_entry(
         [
             WindowTime(manager, entry.entry_id, "start", "Volets réglage plage début"),
             WindowTime(manager, entry.entry_id, "end_time", "Volets réglage plage fin"),
+            ScheduleTime(manager, entry.entry_id, "open_time", "Volets horaire ouverture heure"),
+            ScheduleTime(manager, entry.entry_id, "close_time", "Volets horaire fermeture heure"),
         ]
     )
 
@@ -47,3 +49,27 @@ class WindowTime(VoletsEntity, TimeEntity):
 
     async def async_set_value(self, value: time) -> None:
         await self.manager.async_set_window_setting(self._key, value.strftime("%H:%M"))
+
+
+class ScheduleTime(VoletsEntity, TimeEntity):
+    """Heure fixe d'ouverture ou de fermeture (`settings.schedule.<key>`)."""
+
+    _attr_icon = "mdi:clock-edit-outline"
+
+    def __init__(self, manager: VoletsManager, entry_id: str, key: str, name: str) -> None:
+        super().__init__(manager, entry_id)
+        self._key = key
+        self._attr_name = name
+        self._attr_unique_id = f"{entry_id}_schedule_{key}"
+
+    @property
+    def native_value(self) -> time | None:
+        raw = self.manager.config["settings"]["schedule"].get(self._key)
+        try:
+            hours, minutes = str(raw).split(":")[:2]
+            return time(int(hours), int(minutes))
+        except (TypeError, ValueError):
+            return None
+
+    async def async_set_value(self, value: time) -> None:
+        await self.manager.async_set_schedule_setting(self._key, value.strftime("%H:%M"))

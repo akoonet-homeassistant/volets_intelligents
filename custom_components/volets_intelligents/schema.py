@@ -25,6 +25,8 @@ from .const import (
     KIND_HEAT,
     KIND_HOLD,
     KIND_OFF,
+    SCHEDULE_FIXED,
+    SCHEDULE_MODES,
 )
 from .solar import ORIENTATION_SOUTH, ORIENTATIONS
 
@@ -68,6 +70,15 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "sunset_offset_minutes": -60,
         },
         "auto_scenario": {"enabled": False, "summer_months": [5, 6, 7, 8, 9]},
+        "schedule": {
+            "enabled": False,
+            "open_mode": SCHEDULE_FIXED,
+            "open_time": "07:30",
+            "open_offset_minutes": 0,
+            "close_mode": SCHEDULE_FIXED,
+            "close_time": "21:00",
+            "close_offset_minutes": 0,
+        },
     },
     "scenarios": {
         "summer": {
@@ -123,6 +134,7 @@ DEFAULT_COVER: dict[str, Any] = {
     "name": "",
     "facade": "",
     "enabled": True,
+    "schedule_enabled": True,
     "close_method": CLOSE_POSITION,
     "close_position": 10,
     "button_entity": None,
@@ -259,6 +271,27 @@ _WINDOW = vol.Schema(
     extra=vol.REMOVE_EXTRA,
 )
 
+def _offset(value: Any) -> int:
+    """Décalage par rapport au lever / coucher du soleil : -60 à +60 min par pas de 5."""
+    minutes = _int(-60, 60)(value)
+    if minutes % 5:
+        raise vol.Invalid("un multiple de 5 minutes est attendu")
+    return minutes
+
+
+_SCHEDULE = vol.Schema(
+    {
+        vol.Required("enabled"): _bool,
+        vol.Required("open_mode"): vol.In(SCHEDULE_MODES),
+        vol.Required("open_time"): _time,
+        vol.Required("open_offset_minutes"): _offset,
+        vol.Required("close_mode"): vol.In(SCHEDULE_MODES),
+        vol.Required("close_time"): _time,
+        vol.Required("close_offset_minutes"): _offset,
+    },
+    extra=vol.REMOVE_EXTRA,
+)
+
 _AUTO_SCENARIO = vol.Schema(
     {
         vol.Required("enabled"): _bool,
@@ -287,6 +320,7 @@ _SETTINGS = vol.Schema(
         vol.Required("override_until_window_end"): _bool,
         vol.Required("window"): _WINDOW,
         vol.Required("auto_scenario"): _AUTO_SCENARIO,
+        vol.Required("schedule"): _SCHEDULE,
     },
     extra=vol.REMOVE_EXTRA,
 )
@@ -319,6 +353,7 @@ _COVER = vol.Schema(
         vol.Required("name"): _str(),
         vol.Required("facade"): _str(40),
         vol.Required("enabled"): _bool,
+        vol.Required("schedule_enabled"): _bool,
         vol.Required("close_method"): vol.In(CLOSE_METHODS),
         vol.Required("close_position"): _int(0, 100),
         vol.Required("button_entity"): _entity("button", "input_button"),

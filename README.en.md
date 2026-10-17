@@ -58,6 +58,22 @@ Wind safety stays a priority in all three modes. Each mode is described under it
   `input_text`).
 - Adjustable from the panel and from your dashboards (the window's `time`, `select` and `number` entities).
 
+### Scheduled opening and closing
+
+- **Morning opening and evening closing** of all shutters, at a **fixed time** or **following the sun**: sunrise
+  for opening, sunset for closing, with an **offset from -60 to +60 minutes in steps of 5**. Opening and closing
+  each have their own mode.
+- **Can be disabled per shutter** ("Scheduled opening / closing" box in the Shutters tab, or the
+  `switch.volets_<name>_horaires` switch) and globally (`switch.volets_horaires`). Off by default.
+- Opening brings the shutter to its open position; closing is complete. A shutter already in the right position
+  is left alone.
+- **Open window**: closing is blocked if the shutter has an open-window sensor and the "Do not close if a window
+  is open" option. **Alarm**: opening is blocked according to the active scenario's settings ("do not open if the
+  alarm is armed"). A blocked order is retried at every evaluation for 3 hours, then dropped for the day.
+- The schedule is independent of the scenario and of the active window. It is ignored when the global mode is
+  "manual" or "off" and during the start-up safety delay; wind safety still takes priority. A scheduled order
+  ends a manual pause. Each order runs only once a day, even after a Home Assistant restart.
+
 ### Facades and sun
 
 - **Four facades, house orientation**: north, east, south, west by default (renamable, removable, you can
@@ -246,6 +262,20 @@ examples, `bureau` is to be replaced by your shutter's name.
 | `select.volets_reglage_plage_mode_fin` | select | **Setting** of the end mode: `fixed` (fixed time), `entity` (read from an entity), `sunset` (sunset). The `entity` mode requires an end entity to already be chosen in the panel, otherwise the change is refused. |
 | `number.volets_reglage_plage_decalage_coucher` | number (min) | **Setting** of the offset from sunset (-240 to 240, useful in `sunset` mode). |
 
+### Scheduled opening and closing
+
+| Entity | Type | Usage |
+|---|---|---|
+| `switch.volets_horaires` | switch | **Setting**: enables scheduled opening and closing of all shutters. |
+| `select.volets_horaire_ouverture_mode` | select | **Setting** of the opening mode: `fixed` (fixed time) or `sun` (sunrise). |
+| `time.volets_horaire_ouverture_heure` | time | **Setting** of the fixed opening time (also the fallback if the sun time is unavailable). |
+| `number.volets_horaire_ouverture_decalage_lever` | number (min) | **Setting** of the offset from sunrise (-60 to 60, in steps of 5, useful in `sun` mode). |
+| `sensor.volets_ouverture_prevue` | sensor (timestamp) | Today's opening time (empty if the schedule is disabled). |
+| `select.volets_horaire_fermeture_mode` | select | **Setting** of the closing mode: `fixed` or `sun` (sunset). |
+| `time.volets_horaire_fermeture_heure` | time | **Setting** of the fixed closing time (fallback included). |
+| `number.volets_horaire_fermeture_decalage_coucher` | number (min) | **Setting** of the offset from sunset (-60 to 60, in steps of 5). |
+| `sensor.volets_fermeture_prevue` | sensor (timestamp) | Today's closing time (empty if the schedule is disabled). |
+
 ### Scenario thresholds
 
 | Entity | Type | Usage |
@@ -281,6 +311,7 @@ no conflict. The times are theoretical (sun geometry, no weather or obstacles) a
 | Entity | Type | Description |
 |---|---|---|
 | `switch.volets_<name>_auto` | switch | Automatic management of the shutter: `on` = managed, `off` = ignored by the integration. Replaces the `input_boolean.auto_volet_*`. |
+| `switch.volets_<name>_horaires` | switch | Includes (`on`, default) or excludes (`off`) the shutter from scheduled opening and closing. |
 | `sensor.volets_<name>_statut` | sensor (enum) | Shutter status (see below). The plain-language explanation and the other information are in the attributes. |
 
 Status values (`sensor.volets_<name>_statut`):
@@ -290,6 +321,7 @@ Status values (`sensor.volets_<name>_statut`):
 | `shaded` | Shaded | The shutter was lowered by the integration. |
 | `watching` | Watching | Nothing to do for now. |
 | `paused` | Paused | Manual action detected, or pause requested. |
+| `schedule` | Schedule | Scheduled opening or closing in progress (or waiting: alarm). |
 | `window_open` | Window open | Closing blocked (or window sensor unavailable). |
 | `wind_protected` | Wind-protected | Made safe because of the wind. |
 | `cooldown` | Wear protection | Waiting for the minimum interval between two movements. |

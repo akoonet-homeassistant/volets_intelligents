@@ -1,4 +1,4 @@
-"""Interrupteur « géré automatiquement » pour chaque volet."""
+"""Interrupteurs : gestion automatique et horaires de chaque volet, horaires globaux."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .entity import ManagedCoverEntity, async_setup_dynamic_covers
+from .entity import ManagedCoverEntity, VoletsEntity, async_setup_dynamic_covers
 from .manager import VoletsManager
 
 
@@ -17,6 +17,12 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     manager: VoletsManager = entry.runtime_data
+    async_add_entities([ScheduleSwitch(manager, entry.entry_id)])
+    entry.async_on_unload(
+        async_setup_dynamic_covers(
+            hass, manager, entry.entry_id, "switch", "schedule", CoverScheduleSwitch, async_add_entities
+        )
+    )
     entry.async_on_unload(
         async_setup_dynamic_covers(
             hass, manager, entry.entry_id, "switch", "auto", CoverAutoSwitch, async_add_entities
@@ -48,3 +54,50 @@ class CoverAutoSwitch(ManagedCoverEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.manager.async_set_cover_enabled(self.cover_id, False)
+
+
+class ScheduleSwitch(VoletsEntity, SwitchEntity):
+    """Active les ouvertures et fermetures horaires de tous les volets."""
+
+    _attr_icon = "mdi:clock-time-eight-outline"
+    _attr_name = "Volets horaires"
+
+    def __init__(self, manager: VoletsManager, entry_id: str) -> None:
+        super().__init__(manager, entry_id)
+        self._attr_unique_id = f"{entry_id}_schedule_enabled"
+
+    @property
+    def is_on(self) -> bool:
+        return self.manager.config["settings"]["schedule"]["enabled"]
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self.manager.async_set_schedule_setting("enabled", True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self.manager.async_set_schedule_setting("enabled", False)
+
+
+class CoverScheduleSwitch(ManagedCoverEntity, SwitchEntity):
+    """Inclut ou exclut un volet des ouvertures et fermetures horaires."""
+
+    _attr_icon = "mdi:clock-check-outline"
+
+    def __init__(self, manager: VoletsManager, entry_id: str, cover_id: str) -> None:
+        super().__init__(manager, entry_id, cover_id)
+        self._attr_unique_id = f"{entry_id}_{cover_id}_schedule"
+
+    @property
+    def name(self) -> str:
+        cover = self.cover_config()
+        return f"Volets {cover['name'] if cover else self.cover_id} horaires"
+
+    @property
+    def is_on(self) -> bool:
+        cover = self.cover_config()
+        return bool(cover and cover["schedule_enabled"])
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self.manager.async_set_cover_schedule(self.cover_id, True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self.manager.async_set_cover_schedule(self.cover_id, False)
