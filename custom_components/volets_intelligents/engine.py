@@ -17,10 +17,6 @@ from .const import (
     ACTION_OPEN,
     CLOSE_BUTTON,
     CLOSE_FULL,
-    WINDOW_ACTION_BLOCK,
-    WINDOW_ACTION_BUTTON,
-    WINDOW_ACTION_CLOSE,
-    WINDOW_ACTION_POSITION,
     KIND_GAIN,
     KIND_HEAT,
     KIND_HOLD,
@@ -42,6 +38,10 @@ from .const import (
     ST_WATCHING,
     ST_WIND,
     ST_WINDOW_OPEN,
+    WINDOW_ACTION_BLOCK,
+    WINDOW_ACTION_BUTTON,
+    WINDOW_ACTION_CLOSE,
+    WINDOW_ACTION_POSITION,
 )
 
 
@@ -186,17 +186,21 @@ def schedule_due(
     un redémarrage.
     """
     open_at, close_at = env.schedule_open_at, env.schedule_close_at
-    if open_at is None or close_at is None or not cover.get("schedule_enabled", True):
+    if open_at is None or close_at is None:
+        return None
+    open_on = cover.get("schedule_open_enabled", True)
+    close_on = cover.get("schedule_close_enabled", True)
+    if not open_on and not close_on:
         return None
     if open_at >= close_at:
         return None
     day = env.now.date().isoformat()
     if close_at <= env.now < close_at + env.schedule_catchup:
         key = f"close:{day}"
-        return (ACTION_CLOSE, key, close_at) if rt.schedule_key != key else None
+        return (ACTION_CLOSE, key, close_at) if close_on and rt.schedule_key != key else None
     if open_at <= env.now < min(open_at + env.schedule_catchup, close_at):
         key = f"open:{day}"
-        return (ACTION_OPEN, key, open_at) if rt.schedule_key != key else None
+        return (ACTION_OPEN, key, open_at) if open_on and rt.schedule_key != key else None
     return None
 
 
@@ -206,7 +210,7 @@ def schedule_night(cover: dict[str, Any], rt: CoverRuntime, env: Env) -> bool:
     Sert à ne pas rouvrir un volet fermé le soir pour le gain solaire. Seuls comptent les ordres
     d'hier et d'aujourd'hui : un vieil ordre non suivi d'une ouverture ne bloque pas indéfiniment.
     """
-    if env.schedule_close_at is None or not cover.get("schedule_enabled", True):
+    if env.schedule_close_at is None or not cover.get("schedule_close_enabled", True):
         return False
     key = rt.schedule_key or ""
     if not key.startswith("close:"):

@@ -63,8 +63,9 @@ Wind safety stays a priority in all three modes. Each mode is described under it
 - **Morning opening and evening closing** of all shutters, at a **fixed time** or **following the sun**: sunrise
   for opening, sunset for closing, with an **offset from -60 to +60 minutes in steps of 5**. Opening and closing
   each have their own mode.
-- **Can be disabled per shutter** ("Scheduled opening / closing" box in the Shutters tab, or the
-  `switch.volets_<name>_horaires` switch) and globally (`switch.volets_horaires`). Off by default.
+- **Can be disabled per shutter** ("Scheduled morning opening" and "Scheduled evening closing" boxes in the Shutters tab,
+  independent of each other, or the `switch.volets_<name>_horaire_ouverture` and
+  `switch.volets_<name>_horaire_fermeture` switches) and globally (`switch.volets_horaires`). Off by default.
 - Opening brings the shutter to its open position; closing is complete. A shutter already in the right position
   is left alone.
 - **Opening blocks you can switch on or off** ("Blocks" section of the schedule, each with its own switch): the
@@ -342,7 +343,8 @@ no conflict. The times are theoretical (sun geometry, no weather or obstacles) a
 | `switch.volets_<name>_auto` | switch | Automatic management of the shutter: `on` = managed, `off` = ignored by the integration. Replaces the `input_boolean.auto_volet_*`. |
 | `select.volets_<name>_horaire_fenetre` | select | **Setting**: evening closing if a window is open: `block` (do not close), `close` (close completely), `button` (press the programmed-position button), `position` (go to the chosen position). With `button` and `position`, the shutter closes completely when the window closes. |
 | `number.volets_<name>_horaire_fenetre_position` | number (%) | **Setting**: position reached with the `position` choice (0% = closed). |
-| `switch.volets_<name>_horaires` | switch | Includes (`on`, default) or excludes (`off`) the shutter from scheduled opening and closing. |
+| `switch.volets_<name>_horaire_ouverture` | switch | Includes (`on`, default) or excludes (`off`) the shutter from the scheduled **morning opening**. |
+| `switch.volets_<name>_horaire_fermeture` | switch | Includes (`on`, default) or excludes (`off`) the shutter from the scheduled **evening closing**. When off, the "Evening closing if a window is open" choice and the solar-gain block after closing no longer apply to this shutter. |
 | `sensor.volets_<name>_statut` | sensor (enum) | Shutter status (see below). The plain-language explanation and the other information are in the attributes. |
 
 Status values (`sensor.volets_<name>_statut`):

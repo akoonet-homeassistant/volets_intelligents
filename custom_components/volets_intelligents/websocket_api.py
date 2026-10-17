@@ -188,7 +188,8 @@ def ws_get_entities(hass: HomeAssistant, connection, msg: dict[str, Any]) -> Non
                     "facade": cover["facade"],
                     "switch": find("switch", f"{cover['entity_id']}_auto"),
                     "status": find("sensor", f"{cover['entity_id']}_status"),
-                    "schedule": find("switch", f"{cover['entity_id']}_schedule"),
+                    "schedule_open": find("switch", f"{cover['entity_id']}_schedule_open"),
+                    "schedule_close": find("switch", f"{cover['entity_id']}_schedule_close"),
                     "window_action": find("select", f"{cover['entity_id']}_window_action"),
                     "window_position": find("number", f"{cover['entity_id']}_window_position"),
                 }

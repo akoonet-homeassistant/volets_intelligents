@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.10.13
+
+- Ouverture du matin et fermeture du soir horaires désactivables **séparément, volet par volet** : la case unique « Ouverture / fermeture horaires » de la fiche du volet devient « Ouverture du matin horaire » et « Fermeture du soir horaire ». Le choix « Fermeture du soir si une fenêtre est ouverte » n'apparaît que si la fermeture est cochée. Le réglage global (interrupteur `switch.volets_horaires`) reste unique.
+- Entités : `switch.volets_<nom>_horaires` est remplacé par `switch.volets_<nom>_horaire_ouverture` et `switch.volets_<nom>_horaire_fermeture` (l'ancien est supprimé au démarrage : mettez à jour vos tableaux de bord et automatisations). Ajoutées à l'onglet Entités et au README.
+- Migration : un volet qui avait ses horaires activés (ou désactivés) a les deux nouveaux interrupteurs activés (ou désactivés).
+- Fermeture désactivée pour un volet : le gain solaire (hiver) ne reste plus bloqué après le soir pour ce volet.
+- Menus du panneau réorganisés (voir 2026.10.12 ci-dessous, la 10.12 est remplacée par cette version si vous l'aviez installée).
+
 ## 2026.10.12
 
 - Le scénario « Désactivé » coupe aussi les ouvertures et fermetures horaires.

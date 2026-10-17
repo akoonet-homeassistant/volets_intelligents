@@ -63,8 +63,9 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
 - **Ouverture du matin et fermeture du soir** de tous les volets, à **heure fixe** ou **selon le soleil** :
   lever du soleil pour l'ouverture, coucher du soleil pour la fermeture, avec un **décalage de -60 à +60 minutes
   par pas de 5**. Chaque moment (ouverture, fermeture) a son propre mode.
-- **Désactivable volet par volet** (case « Ouverture / fermeture horaires » dans l'onglet Volets, ou interrupteur
-  `switch.volets_<nom>_horaires`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
+- **Désactivable volet par volet** (cases « Ouverture du matin horaire » et « Fermeture du soir horaire » dans l'onglet Volets,
+  indépendantes l'une de l'autre, ou interrupteurs `switch.volets_<nom>_horaire_ouverture` et
+  `switch.volets_<nom>_horaire_fermeture`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
 - L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
   position n'est pas touché.
 - **Blocages de l'ouverture activables** (section « Blocages » de l'onglet Horaires, chacun avec son interrupteur) :
@@ -345,7 +346,8 @@ rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
 | `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
 | `select.volets_<nom>_horaire_fenetre` | select | **Réglage** : fermeture du soir si une fenêtre est ouverte : `block` (ne pas fermer), `close` (fermer complètement), `button` (presser le bouton de position programmée), `position` (aller à la position choisie). Avec `button` et `position`, le volet se ferme complètement quand la fenêtre se referme. |
 | `number.volets_<nom>_horaire_fenetre_position` | number (%) | **Réglage** : position atteinte avec le choix `position` (0 % = fermé). |
-| `switch.volets_<nom>_horaires` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet des ouvertures et fermetures horaires. |
+| `switch.volets_<nom>_horaire_ouverture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de l'**ouverture du matin** horaire. |
+| `switch.volets_<nom>_horaire_fermeture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de la **fermeture du soir** horaire. Désactivée, le choix « Fermeture du soir si une fenêtre est ouverte » et le blocage du gain solaire après la fermeture ne s'appliquent plus à ce volet. |
 | `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
 
 Valeurs du statut (`sensor.volets_<nom>_statut`) :

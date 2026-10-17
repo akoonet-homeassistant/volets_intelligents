@@ -31,7 +31,6 @@ from .const import (
     ACTION_OPEN,
     CLOSE_BUTTON,
     CLOSE_POSITION,
-    WINDOW_ACTION_BLOCK,
     CONFIG_VERSION,
     END_ENTITY,
     END_SUNSET,
@@ -47,6 +46,7 @@ from .const import (
     STORAGE_KEY_CONFIG,
     STORAGE_KEY_RUNTIME,
     STORAGE_VERSION,
+    WINDOW_ACTION_BLOCK,
 )
 from .engine import CoverInputs, CoverRuntime, Decision, Env, decide, window_hold_active
 from .schema import ConfigError, default_config, normalize_config
@@ -712,7 +712,8 @@ class VoletsManager:
             "name": cover["name"],
             "facade": cover["facade"],
             "enabled": cover["enabled"],
-            "schedule_enabled": cover["schedule_enabled"],
+            "schedule_open_enabled": cover["schedule_open_enabled"],
+            "schedule_close_enabled": cover["schedule_close_enabled"],
             "window_open_action": cover["window_open_action"],
             "window_triggered": bool(rt.window_triggered),
             "status": decision.status,
@@ -911,12 +912,12 @@ class VoletsManager:
         except ConfigError as err:
             raise HomeAssistantError(str(err)) from err
 
-    async def async_set_cover_schedule(self, entity_id: str, enabled: bool) -> None:
-        """Inclut ou exclut un volet des ouvertures / fermetures horaires."""
+    async def async_set_cover_schedule(self, entity_id: str, which: str, enabled: bool) -> None:
+        """Inclut ou exclut un volet de l'ouverture (`open`) ou de la fermeture (`close`) horaire."""
         config = {**self.config, "covers": [dict(c) for c in self.config["covers"]]}
         for cover in config["covers"]:
             if cover["entity_id"] == entity_id:
-                cover["schedule_enabled"] = enabled
+                cover[f"schedule_{which}_enabled"] = enabled
         await self.async_set_config(config)
 
     async def async_set_cover_window_action(self, entity_id: str, action: str) -> None:

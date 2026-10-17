@@ -99,7 +99,8 @@ const I18N = {
     "ent.schedCloseTime": "Réglage : heure de fermeture",
     "ent.schedCloseOffset": "Réglage : décalage coucher du soleil (min)",
     "ent.schedCloseAt": "Fermeture prévue aujourd'hui",
-    "ent.schedCover": "Horaires du volet",
+    "ent.schedOpenCover": "Ouverture du matin du volet",
+    "ent.schedCloseCover": "Fermeture du soir du volet",
     "ent.schedBlockAlarm": "Réglage : l'alarme bloque l'ouverture",
     "ent.schedBlockAlarmWindow": "Réglage : alarme et fenêtre bloquent l'ouverture",
     "ent.windowAction": "Fermeture du soir si une fenêtre est ouverte",
@@ -294,6 +295,8 @@ const I18N = {
     "covers.windowSensor": "capteur d'ouverture",
     "covers.addWindow": "Ajouter : {label}",
     "covers.blockClose": "Protection solaire : ne pas fermer si une fenêtre est ouverte",
+    "covers.scheduleOpen": "Ouverture du matin horaire",
+    "covers.scheduleClose": "Fermeture du soir horaire",
     "covers.schedule": "Ouverture / fermeture horaires",
     "covers.secIdentity": "Volet",
     "covers.secSun": "Protection solaire et fermeture",
@@ -304,7 +307,7 @@ const I18N = {
     "covers.secWind": "Vent",
     "covers.allowOpenClosed": "Autoriser à remonter un volet fermé à 100 %",
     "covers.allowOpenClosedHelp": "Par défaut, un volet fermé à 100 % n'est jamais remonté par l'intégration, quelle que soit la façon dont il a été fermé. Activez un scénario pour lever cette règle dans ce scénario seulement. L'ouverture horaire du matin n'est pas concernée : elle ouvre aussi un volet fermé à 100 %.",
-    "covers.scheduleHelp": "Décochez pour que ce volet ignore les horaires d'ouverture et de fermeture (heures réglées dans l'onglet Horaires).",
+    "covers.scheduleHelp": "Ouverture et fermeture sont indépendantes : décochez l'une pour que ce volet l'ignore (heures réglées dans l'onglet Horaires).",
     "covers.schedWindow": "Fermeture du soir si une fenêtre est ouverte",
     "covers.winBlock": "Ne pas fermer (attendre que la fenêtre soit fermée)",
     "covers.winClose": "Fermer complètement",
@@ -571,7 +574,8 @@ const I18N = {
     "ent.schedCloseTime": "Setting: closing time",
     "ent.schedCloseOffset": "Setting: sunset offset (min)",
     "ent.schedCloseAt": "Closing planned today",
-    "ent.schedCover": "Shutter schedule",
+    "ent.schedOpenCover": "Shutter morning opening",
+    "ent.schedCloseCover": "Shutter evening closing",
     "ent.schedBlockAlarm": "Setting: the alarm blocks opening",
     "ent.schedBlockAlarmWindow": "Setting: alarm and window block opening",
     "ent.windowAction": "Evening closing if a window is open",
@@ -766,6 +770,8 @@ const I18N = {
     "covers.windowSensor": "opening sensor",
     "covers.addWindow": "Add: {label}",
     "covers.blockClose": "Sun protection: do not close if a window is open",
+    "covers.scheduleOpen": "Scheduled morning opening",
+    "covers.scheduleClose": "Scheduled evening closing",
     "covers.schedule": "Scheduled opening / closing",
     "covers.secIdentity": "Shutter",
     "covers.secSun": "Sun protection and closing",
@@ -776,7 +782,7 @@ const I18N = {
     "covers.secWind": "Wind",
     "covers.allowOpenClosed": "Allow raising a shutter that is 100% closed",
     "covers.allowOpenClosedHelp": "By default, a shutter that is 100% closed is never raised by the integration, however it was closed. Turn on a scenario to lift this rule for that scenario only. The scheduled morning opening is not affected: it also opens a shutter that is 100% closed.",
-    "covers.scheduleHelp": "Untick to make this shutter ignore the scheduled opening and closing times (set in the Schedule tab).",
+    "covers.scheduleHelp": "Opening and closing are independent: untick one to make this shutter ignore it (times set in the Schedule tab).",
     "covers.schedWindow": "Evening closing if a window is open",
     "covers.winBlock": "Do not close (wait until the window is closed)",
     "covers.winClose": "Close completely",
@@ -2053,11 +2059,11 @@ class VoletsIntelligentsPanel extends HTMLElement {
       }), out);
   }
 
-  _toggle(obj, key, label, help) {
+  _toggle(obj, key, label, help, onChange) {
     return el("div", { class: "field" },
       el("label", { class: "toggle" },
         el("input", { type: "checkbox", checked: Boolean(obj[key]),
-          onchange: (e) => { obj[key] = e.target.checked; this._touch(); } }),
+          onchange: (e) => { obj[key] = e.target.checked; this._touch(); if (onChange) onChange(); } }),
         el("span", { text: label })),
       help ? el("small", { class: "help", text: help }) : null);
   }
@@ -2156,7 +2162,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
       close_method: "position", close_position: facade ? facade.default_close_position : 10,
       button_entity: null, open_position: 100, room_temp_entity: null,
       window_entities: [], block_close_if_open: true, wind_sensitive: false, wind_action: "open",
-      allow_open_closed_in: [], schedule_enabled: true,
+      allow_open_closed_in: [],
+      schedule_open_enabled: true, schedule_close_enabled: true,
       window_open_action: "block", window_open_button: null, window_open_position: 30,
     };
   }
@@ -2237,6 +2244,10 @@ class VoletsIntelligentsPanel extends HTMLElement {
     const covers = this._draft.covers;
     if (!Array.isArray(cover.window_entities)) cover.window_entities = [];
     if (cover.window_open_action === undefined || cover.window_open_action === "none") cover.window_open_action = "block";
+    for (const k of ["schedule_open_enabled", "schedule_close_enabled"]) {
+      if (cover[k] === undefined) cover[k] = cover.schedule_enabled !== false;
+    }
+    delete cover.schedule_enabled;
     if (cover.window_open_position === undefined) cover.window_open_position = 30;
     if (!Array.isArray(cover.allow_open_closed_in)) cover.allow_open_closed_in = [];
     const facadeName = () => {
@@ -2292,9 +2303,11 @@ class VoletsIntelligentsPanel extends HTMLElement {
       this._t("covers.windowButtonHelp"));
     const windowPositionField = this._field(this._t("covers.windowPosition"),
       this._range(cover, "window_open_position"), this._t("covers.windowPositionHelp"));
+    let windowActionField;
     const syncWindowAction = () => {
-      windowButtonField.hidden = cover.window_open_action !== "button";
-      windowPositionField.hidden = cover.window_open_action !== "position";
+      if (windowActionField) windowActionField.hidden = !cover.schedule_close_enabled;
+      windowButtonField.hidden = !cover.schedule_close_enabled || cover.window_open_action !== "button";
+      windowPositionField.hidden = !cover.schedule_close_enabled || cover.window_open_action !== "position";
     };
 
     // Action par vent fort : visible seulement si le volet est sensible au vent.
@@ -2336,12 +2349,13 @@ class VoletsIntelligentsPanel extends HTMLElement {
             null, true),
           this._toggle(cover, "block_close_if_open", this._t("covers.blockClose"))),
         this._section(this._t("covers.secSchedule"), null,
-          this._toggle(cover, "schedule_enabled", this._t("covers.schedule"), this._t("covers.scheduleHelp")),
-          this._field(this._t("covers.schedWindow"),
+          this._toggle(cover, "schedule_open_enabled", this._t("covers.scheduleOpen"), this._t("covers.scheduleHelp")),
+          this._toggle(cover, "schedule_close_enabled", this._t("covers.scheduleClose"), null, syncWindowAction),
+          (windowActionField = this._field(this._t("covers.schedWindow"),
             this._select(cover, "window_open_action", [["block", this._t("covers.winBlock")],
               ["close", this._t("covers.winClose")], ["button", this._t("covers.winButton")],
               ["position", this._t("covers.winPosition")]], syncWindowAction),
-            this._t("covers.schedWindowHelp")),
+            this._t("covers.schedWindowHelp"))),
           windowButtonField, windowPositionField),
         this._section(this._t("covers.secWind"), null,
           windToggle, windActionField)));
@@ -2810,7 +2824,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
         list.map((c) => el("div", { class: "ent-cover" },
           el("strong", { text: c.name || c.cover }),
           this._entityRow(this._t("ent.switch"), c.switch, "switch"),
-          this._entityRow(this._t("ent.schedCover"), c.schedule, "switch"),
+          this._entityRow(this._t("ent.schedOpenCover"), c.schedule_open, "switch"),
+          this._entityRow(this._t("ent.schedCloseCover"), c.schedule_close, "switch"),
           this._entityRow(this._t("ent.windowAction"), c.window_action, "windowaction"),
           this._entityRow(this._t("ent.windowPosition"), c.window_position, "percent"),
           this._entityRow(this._t("ent.status"), c.status, "status")))))
@@ -2888,7 +2903,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
         if (c.switch) coverYaml.push(`      - entity: ${c.switch}`, `        name: ${q(`${name} : ${this._t("ent.switch").toLowerCase()}`)}`);
         if (c.window_position) coverYaml.push(`      - entity: ${c.window_position}`, `        name: ${q(`${name} : ${this._t("ent.windowPosition").toLowerCase()}`)}`);
         if (c.window_action) coverYaml.push(`      - entity: ${c.window_action}`, `        name: ${q(`${name} : ${this._t("ent.windowAction").toLowerCase()}`)}`);
-        if (c.schedule) coverYaml.push(`      - entity: ${c.schedule}`, `        name: ${q(`${name} : ${this._t("ent.schedCover").toLowerCase()}`)}`);
+        if (c.schedule_open) coverYaml.push(`      - entity: ${c.schedule_open}`, `        name: ${q(`${name} : ${this._t("ent.schedOpenCover").toLowerCase()}`)}`);
+        if (c.schedule_close) coverYaml.push(`      - entity: ${c.schedule_close}`, `        name: ${q(`${name} : ${this._t("ent.schedCloseCover").toLowerCase()}`)}`);
         if (c.status) {
           coverYaml.push(`      - entity: ${c.status}`, `        name: ${q(name)}`,
             "      - type: attribute", `        entity: ${c.status}`, "        attribute: reason",

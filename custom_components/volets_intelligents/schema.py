@@ -139,7 +139,8 @@ DEFAULT_COVER: dict[str, Any] = {
     "name": "",
     "facade": "",
     "enabled": True,
-    "schedule_enabled": True,
+    "schedule_open_enabled": True,
+    "schedule_close_enabled": True,
     "close_method": CLOSE_POSITION,
     "close_position": 10,
     "button_entity": None,
@@ -363,7 +364,8 @@ _COVER = vol.Schema(
         vol.Required("name"): _str(),
         vol.Required("facade"): _str(40),
         vol.Required("enabled"): _bool,
-        vol.Required("schedule_enabled"): _bool,
+        vol.Required("schedule_open_enabled"): _bool,
+        vol.Required("schedule_close_enabled"): _bool,
         vol.Required("close_method"): vol.In(CLOSE_METHODS),
         vol.Required("close_position"): _int(0, 100),
         vol.Required("button_entity"): _entity("button", "input_button"),
@@ -543,6 +545,12 @@ def normalize_config(raw: Any) -> dict[str, Any]:
     for index, item in enumerate(raw_covers, start=1):
         if isinstance(item, dict) and item.get("window_open_action") == "none":
             item = {**item, "window_open_action": WINDOW_ACTION_BLOCK}  # ancienne valeur (2026.10.11)
+        if isinstance(item, dict) and "schedule_enabled" in item:
+            # Ancien réglage unique (2026.10.12 et avant) : il vaut pour l'ouverture et la fermeture.
+            old = item["schedule_enabled"]
+            item = {k: v for k, v in item.items() if k != "schedule_enabled"}
+            item.setdefault("schedule_open_enabled", old)
+            item.setdefault("schedule_close_enabled", old)
         cover = _validate(_COVER, _merge(DEFAULT_COVER, item), f"Volet n°{index}")
         if cover["entity_id"] in seen_covers:
             raise ConfigError(f"Volet « {cover['entity_id']} » en double")
