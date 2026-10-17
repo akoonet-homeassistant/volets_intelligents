@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
-.venv/
-.idea/
-.vscode/
-.DS_Store
-*.zip
+.pytest_cache/
+.ruff_cache/
+.venv*/
+node_modules/
+.mypy_cache/
