@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.10.11
+
+- Horaires d'ouverture et de fermeture : les blocages par l'alarme et par la fenêtre sont maintenant activables ou non, chacun avec son réglage (section « Blocages » dans Réglages) : l'alarme bloque l'ouverture, l'alarme et une fenêtre ouverte bloquent l'ouverture, une fenêtre ouverte bloque la fermeture. Ils ne dépendent plus des réglages du scénario actif.
+- Nouvelle fonction par volet : action quand une fenêtre s'ouvre. Le volet ne fait rien (par défaut), se ferme complètement ou presse un bouton (position programmée). À la fermeture de la fenêtre, il se ferme complètement. Tant que la fenêtre est ouverte, ni la protection solaire ni les horaires ne déplacent le volet. Demande un capteur de fenêtre sur le volet.
+- Panneau, onglet Volets : le formulaire d'un volet est découpé en blocs bien visibles (Volet, Protection solaire et fermeture, Fenêtres et portes, Horaires, Vent).
+- Nouvelles entités, ajoutées à l'onglet Entités et au README : `switch.volets_horaire_alarme_bloque_ouverture`, `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture`, `switch.volets_horaire_fenetre_bloque_fermeture`, et `select.volets_<nom>_fenetre_ouverte` pour chaque volet.
+
 ## 2026.10.10
 
 - Nouvelle fonction : ouverture du matin et fermeture du soir de tous les volets, à heure fixe ou selon le lever et le coucher du soleil, avec un décalage de -60 à +60 minutes par pas de 5 (réglages dans l'onglet Réglages, section « Ouverture et fermeture horaires »). Désactivée par défaut ; désactivable globalement et volet par volet (case dans l'onglet Volets).

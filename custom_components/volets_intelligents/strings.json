@@ -47,6 +47,13 @@
           "fixed": "Heure fixe",
           "sun": "Lever / coucher du soleil"
         }
+      },
+      "window_action": {
+        "state": {
+          "none": "Aucune",
+          "close": "Fermeture complète",
+          "button": "Bouton (position programmée)"
+        }
       }
     },
     "sensor": {

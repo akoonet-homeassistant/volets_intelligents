@@ -31,6 +31,7 @@ from .const import (
     ACTION_OPEN,
     CLOSE_BUTTON,
     CLOSE_POSITION,
+    WINDOW_ACTION_NONE,
     CONFIG_VERSION,
     END_ENTITY,
     END_SUNSET,
@@ -124,6 +125,7 @@ class VoletsManager:
                 last_action=data.get("last_action"),
                 last_action_at=_parse_dt(data.get("last_action_at")),
                 schedule_key=data.get("schedule_key"),
+                window_triggered=bool(data.get("window_triggered")),
             )
 
     async def async_start(self) -> None:
@@ -547,6 +549,9 @@ class VoletsManager:
             schedule_open_at=schedule_open,
             schedule_close_at=schedule_close,
             schedule_catchup=timedelta(minutes=SCHEDULE_CATCHUP_MINUTES),
+            schedule_block_open_alarm=settings["schedule"]["block_open_alarm"],
+            schedule_block_open_alarm_window=settings["schedule"]["block_open_alarm_window"],
+            schedule_block_close_window=settings["schedule"]["block_close_window"],
         )
 
         sun = self._sun_now(now)
@@ -578,12 +583,18 @@ class VoletsManager:
             decision = decide(cover, inp, rt, env)
             if decision.forget:
                 rt.shaded_by_us = False
+            if cover["window_open_action"] == WINDOW_ACTION_NONE and rt.window_triggered:
+                rt.window_triggered = False  # action désactivée entre-temps
             if decision.action and not self._already_sent(rt, decision.action, now):
-                if await self._execute(cover, decision, rt, now) and decision.schedule_key:
-                    rt.schedule_key = decision.schedule_key
-                    rt.paused_until = None  # un ordre horaire met fin à une pause manuelle
-            elif decision.schedule_key and not decision.action:
-                rt.schedule_key = decision.schedule_key  # rien à faire : déjà dans l'état voulu
+                if await self._execute(cover, decision, rt, now):
+                    if decision.schedule_key:
+                        rt.schedule_key = decision.schedule_key
+                        rt.paused_until = None  # un ordre horaire met fin à une pause manuelle
+                    self._mark_window(decision, rt)
+            elif not decision.action:
+                if decision.schedule_key:
+                    rt.schedule_key = decision.schedule_key  # rien à faire : déjà dans l'état voulu
+                self._mark_window(decision, rt)
             covers_status.append(self._cover_status(cover, inp, rt, decision))
 
         self.status = {
@@ -617,6 +628,14 @@ class VoletsManager:
         self._save_runtime()
         self._arm_schedule(now, schedule_open, schedule_close)
         async_dispatcher_send(self.hass, SIGNAL_STATUS_UPDATED)
+
+    @staticmethod
+    def _mark_window(decision: Decision, rt: CoverRuntime) -> None:
+        """Mémorise que l'action « fenêtre ouverte » est faite (ou que la fenêtre est refermée)."""
+        if decision.window_event == "open":
+            rt.window_triggered = True
+        elif decision.window_event == "closed":
+            rt.window_triggered = False
 
     def _arm_schedule(
         self, now: datetime, open_at: datetime | None, close_at: datetime | None
@@ -660,7 +679,10 @@ class VoletsManager:
             (s := self.hass.states.get(e)) is None or s.state in _INVALID or s.state == STATE_ON
             for e in cover["window_entities"]
         )
+        window_states = [self.hass.states.get(e) for e in cover["window_entities"]]
         return CoverInputs(
+            window_opened=any(s is not None and s.state == STATE_ON for s in window_states),
+            window_known=all(s is not None and s.state not in _INVALID for s in window_states),
             available=available,
             state=state.state if state else None,
             position=position,
@@ -686,6 +708,8 @@ class VoletsManager:
             "facade": cover["facade"],
             "enabled": cover["enabled"],
             "schedule_enabled": cover["schedule_enabled"],
+            "window_open_action": cover["window_open_action"],
+            "window_triggered": rt.window_triggered,
             "status": decision.status,
             "reason": decision.reason,
             "position": inp.position,
@@ -729,7 +753,15 @@ class VoletsManager:
         context = Context()
         rt.last_command_at = now  # avant l'appel : évite une fausse détection manuelle
         try:
-            if decision.scheduled and decision.action == ACTION_CLOSE:
+            if decision.button:
+                await self.hass.services.async_call(
+                    decision.button.split(".")[0],
+                    "press",
+                    {"entity_id": decision.button},
+                    blocking=False,
+                    context=context,
+                )
+            elif decision.scheduled and decision.action == ACTION_CLOSE:
                 await self._send_plain(cover, ACTION_CLOSE, context)  # fermeture complète du soir
             elif decision.plain:
                 await self._send_plain(cover, decision.action, context)
@@ -743,7 +775,10 @@ class VoletsManager:
             )
             return False
         rt.shaded_by_us = (
-            decision.action == ACTION_CLOSE and not decision.plain and not decision.scheduled
+            decision.action == ACTION_CLOSE
+            and not decision.plain
+            and not decision.scheduled
+            and not decision.window_event
         )
         rt.last_action = decision.action
         rt.last_action_at = now
@@ -868,6 +903,17 @@ class VoletsManager:
                 cover["schedule_enabled"] = enabled
         await self.async_set_config(config)
 
+    async def async_set_cover_window_action(self, entity_id: str, action: str) -> None:
+        """Action du volet quand sa fenêtre s'ouvre : none, close ou button."""
+        config = {**self.config, "covers": [dict(c) for c in self.config["covers"]]}
+        for cover in config["covers"]:
+            if cover["entity_id"] == entity_id:
+                cover["window_open_action"] = action
+        try:
+            await self.async_set_config(config)
+        except ConfigError as err:
+            raise HomeAssistantError(str(err)) from err
+
     async def async_set_scenario_setting(self, scenario: str, key: str, value: Any) -> None:
         """Modifie un seuil d'un scénario (ex. close_outdoor du scénario « summer »)."""
         config = copy.deepcopy(self.config)
@@ -945,6 +991,7 @@ class VoletsManager:
                     "last_action": rt.last_action,
                     "last_action_at": _iso(rt.last_action_at),
                     "schedule_key": rt.schedule_key,
+                    "window_triggered": rt.window_triggered,
                 }
                 for entity_id, rt in self.runtime.items()
             },

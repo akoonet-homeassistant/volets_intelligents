@@ -1,4 +1,4 @@
-"""Sélecteurs du mode global et du scénario."""
+"""Sélecteurs : mode global, scénario, plage, horaires et action « fenêtre ouverte » des volets."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import MODES
-from .entity import VoletsEntity
+from .const import MODES, WINDOW_ACTIONS
+from .entity import ManagedCoverEntity, VoletsEntity, async_setup_dynamic_covers
 from .manager import VoletsManager
 
 
@@ -17,6 +17,12 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     manager: VoletsManager = entry.runtime_data
+    entry.async_on_unload(
+        async_setup_dynamic_covers(
+            hass, manager, entry.entry_id, "select", "window_action",
+            CoverWindowActionSelect, async_add_entities,
+        )
+    )
     async_add_entities(
         [
             ModeSelect(manager, entry.entry_id),
@@ -136,3 +142,28 @@ class ScheduleModeSelect(VoletsEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         await self.manager.async_set_schedule_setting(self._key, option)
+
+
+class CoverWindowActionSelect(ManagedCoverEntity, SelectEntity):
+    """Action du volet quand sa fenêtre s'ouvre : rien, fermeture complète ou bouton (position programmée)."""
+
+    _attr_translation_key = "window_action"
+    _attr_options = list(WINDOW_ACTIONS)
+    _attr_icon = "mdi:window-open-variant"
+
+    def __init__(self, manager: VoletsManager, entry_id: str, cover_id: str) -> None:
+        super().__init__(manager, entry_id, cover_id)
+        self._attr_unique_id = f"{entry_id}_{cover_id}_window_action"
+
+    @property
+    def name(self) -> str:
+        cover = self.cover_config()
+        return f"Volets {cover['name'] if cover else self.cover_id} fenêtre ouverte"
+
+    @property
+    def current_option(self) -> str | None:
+        cover = self.cover_config()
+        return cover["window_open_action"] if cover else None
+
+    async def async_select_option(self, option: str) -> None:
+        await self.manager.async_set_cover_window_action(self.cover_id, option)

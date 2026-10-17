@@ -67,14 +67,27 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
   `switch.volets_<nom>_horaires`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
 - L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
   position n'est pas touché.
-- **Fenêtre ouverte** : la fermeture est bloquée si le volet a un capteur de fenêtre ouverte et l'option « Ne pas
-  fermer si une fenêtre est ouverte ». **Alarme** : l'ouverture est bloquée selon les réglages du scénario actif
-  (« ne pas ouvrir si l'alarme est activée »). Un ordre bloqué est retenté à chaque évaluation pendant 3 heures,
-  puis abandonné pour la journée.
+- **Blocages activables** (section « Blocages » des horaires, chacun avec son interrupteur) : l'**alarme** bloque
+  l'ouverture ; l'**alarme et une fenêtre ouverte** bloquent l'ouverture ; une **fenêtre ouverte** bloque la
+  fermeture (pour les volets qui ont un capteur de fenêtre et l'option « Ne pas fermer si une fenêtre est
+  ouverte »). Décochés, l'ordre horaire passe quand même. Un ordre bloqué est retenté à chaque évaluation
+  pendant 3 heures, puis abandonné pour la journée.
 - Les horaires sont indépendants du scénario et de la plage active. Ils sont ignorés quand le mode global est
   « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
   prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
   même après un redémarrage de Home Assistant.
+
+### Action quand une fenêtre s'ouvre
+
+- Par volet (onglet Volets, section « Fenêtres et portes »), choix de ce que fait le volet **quand une de ses
+  fenêtres s'ouvre** : **rien** (par défaut), **se fermer complètement**, ou **presser un bouton** (position
+  programmée, par exemple la position favorite du volet).
+- **Quand la fenêtre se referme**, le volet se ferme complètement.
+- Demande au moins un capteur de fenêtre sur le volet. Tant que la fenêtre est ouverte, aucune autre règle
+  (protection solaire, horaires) ne déplace le volet. Un capteur indisponible ne déclenche rien et ne referme
+  pas le volet. La sécurité vent reste prioritaire.
+- Réglable depuis le panneau et depuis un tableau de bord (`select.volets_<nom>_fenetre_ouverte`). Le bouton se
+  choisit dans le panneau.
 
 ### Façades et soleil
 
@@ -278,6 +291,9 @@ nom de votre volet.
 | `time.volets_horaire_fermeture_heure` | time | **Réglage** de l'heure de fermeture fixe (repli compris). |
 | `number.volets_horaire_fermeture_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -60 à 60, par pas de 5). |
 | `sensor.volets_fermeture_prevue` | sensor (horodatage) | Heure de fermeture du jour (vide si les horaires sont désactivés). |
+| `switch.volets_horaire_alarme_bloque_ouverture` | switch | **Réglage** : l'alarme activée bloque l'ouverture horaire. |
+| `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture` | switch | **Réglage** : l'alarme activée et une fenêtre ouverte bloquent l'ouverture horaire. |
+| `switch.volets_horaire_fenetre_bloque_fermeture` | switch | **Réglage** : une fenêtre ouverte bloque la fermeture horaire. |
 
 ### Seuils des scénarios
 
@@ -314,6 +330,7 @@ rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
 | Entité | Type | Description |
 |---|---|---|
 | `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
+| `select.volets_<nom>_fenetre_ouverte` | select | **Réglage** : action du volet quand sa fenêtre s'ouvre : `none` (rien), `close` (fermeture complète), `button` (presse le bouton de position programmée). À la fermeture de la fenêtre, le volet se ferme complètement. |
 | `switch.volets_<nom>_horaires` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet des ouvertures et fermetures horaires. |
 | `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
 
@@ -325,7 +342,7 @@ Valeurs du statut (`sensor.volets_<nom>_statut`) :
 | `watching` | Surveillance | Rien à faire pour le moment. |
 | `paused` | En pause | Action manuelle détectée, ou pause demandée. |
 | `schedule` | Horaire | Ouverture ou fermeture horaire en cours (ou en attente : alarme). |
-| `window_open` | Fenêtre ouverte | Fermeture bloquée (ou capteur de fenêtre indisponible). |
+| `window_open` | Fenêtre ouverte | Fermeture bloquée, volet en position programmée pendant que la fenêtre est ouverte (ou capteur de fenêtre indisponible). |
 | `wind_protected` | Protégé du vent | Mis en sécurité à cause du vent. |
 | `cooldown` | Anti-usure | Attente de l'intervalle minimal entre deux mouvements. |
 | `outside_window` | Hors plage | En dehors de la plage active. |
