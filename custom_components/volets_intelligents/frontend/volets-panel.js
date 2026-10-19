@@ -112,6 +112,8 @@ const I18N = {
     "ent.off": "non",
 
     "common.retry": "Réessayer",
+    "common.on": "activé",
+    "common.off": "désactivé",
     "common.add": "Ajouter",
     "common.cancel": "Annuler",
     "common.save": "Enregistrer",
@@ -248,6 +250,14 @@ const I18N = {
     "dash.pauseAria": "Mettre en pause {name}",
     "dash.auto": "Auto",
     "dash.autoAria": "Gestion automatique de {name}",
+    "dash.solarShort": "S",
+    "dash.openShort": "O",
+    "dash.closeShort": "F",
+    "dash.solarFlag": "Protection solaire",
+    "dash.openFlag": "Ouverture horaire",
+    "dash.closeFlag": "Fermeture horaire",
+    "dash.flagAria": "{what} de {name}",
+    "dash.flagLegend": "S = protection solaire · O = ouverture horaire du matin · F = fermeture horaire du soir",
     "dash.resumeAria": "Reprendre {name}",
 
     "fcard.exposed": "Exposée",
@@ -587,6 +597,8 @@ const I18N = {
     "ent.off": "no",
 
     "common.retry": "Retry",
+    "common.on": "on",
+    "common.off": "off",
     "common.add": "Add",
     "common.cancel": "Cancel",
     "common.save": "Save",
@@ -723,6 +735,14 @@ const I18N = {
     "dash.pauseAria": "Pause {name}",
     "dash.auto": "Auto",
     "dash.autoAria": "Automatic control of {name}",
+    "dash.solarShort": "S",
+    "dash.openShort": "O",
+    "dash.closeShort": "C",
+    "dash.solarFlag": "Sun protection",
+    "dash.openFlag": "Scheduled opening",
+    "dash.closeFlag": "Scheduled closing",
+    "dash.flagAria": "{what} for {name}",
+    "dash.flagLegend": "S = sun protection · O = scheduled morning opening · C = scheduled evening closing",
     "dash.resumeAria": "Resume {name}",
 
     "fcard.exposed": "Sunlit",
@@ -1270,6 +1290,8 @@ textarea { font-family: monospace; font-size: 13px; padding: 8px 12px; min-heigh
 .chip button { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--secondary-text-color, #727272); font-size: 20px; cursor: pointer; }
 .chip-id { font-size: 12px; color: var(--secondary-text-color, #727272); }
 .chip-toggle { min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--divider-color, #ccc); background: transparent; color: var(--primary-text-color, #212121); cursor: pointer; }
+.chip-toggle.flag { min-width: 44px; padding: 0 10px; font-weight: 600; }
+.sel { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--divider-color, #ccc); background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); font: inherit; }
 .chip-toggle[aria-pressed="true"] { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); border-color: transparent; }
 
 .bulk-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--divider-color, #ccc); border-radius: 8px; }
@@ -1636,12 +1658,12 @@ class VoletsIntelligentsPanel extends HTMLElement {
       el("h2", { text: this._t("dash.control") }),
       el("div", { class: "lbl-row" },
         el("span", { class: "lbl", text: this._t("dash.globalMode") }),
-        this._segmented(MODE_IDS.map((m) => [m, this._t(`mode.${m}`)]), st.mode,
+        this._dropdown(MODE_IDS.map((m) => [m, this._t(`mode.${m}`)]), st.mode,
           (v) => this._command({ command: "set_mode", value: v }, "mode"), this._t("dash.globalMode"), busyAll)),
       el("small", { class: "help", role: "note", text: MODE_IDS.includes(st.mode) ? this._t(`mode.${st.mode}.desc`) : "" }),
       el("div", { class: "lbl-row" },
         el("span", { class: "lbl", text: this._t("dash.scenario") }),
-        this._segmented(scenarioOptions, st.scenario,
+        this._dropdown(scenarioOptions, st.scenario,
           (v) => this._command({ command: "set_scenario", value: v }, "scenario"), this._t("dash.scenario"), busyAll)),
       el("small", { class: "help", role: "note", text: SCENARIO_IDS.includes(st.scenario) ? this._t(`scenario.${st.scenario}.desc`) : "" }),
       el("div", { class: "toolbar" },
@@ -1786,7 +1808,8 @@ class VoletsIntelligentsPanel extends HTMLElement {
     } else {
       body = covers.map((c, i) => this._coverRow(c, busyAll, covers, i, reorderable));
     }
-    return el("section", { class: "card" }, header, hint, body);
+    return el("section", { class: "card" }, header, hint,
+      el("p", { class: "small muted", text: this._t("dash.flagLegend") }), body);
   }
 
   /** Enregistre un nouvel ordre des volets (liste d'entity_id) dans la configuration. */
@@ -1898,13 +1921,14 @@ class VoletsIntelligentsPanel extends HTMLElement {
             el("span", { text: this._t("dash.room", { value: this._num(c.room_temp, "°C") }) }),
             c.paused_until ? el("span", { text: this._t("dash.pausedUntil", { time: this._time(c.paused_until) }) }) : null)),
         el("div", { class: "cover-actions" }, arrows,
-          el("button", {
-            class: "chip-toggle", type: "button", text: this._t("dash.auto"),
-            "aria-pressed": String(c.enabled !== false), disabled: busyAll,
-            "aria-label": this._t("dash.autoAria", { name }),
+          ...[["enabled", "solar", c.enabled !== false], ["schedule_open_enabled", "open", c.schedule_open_enabled !== false],
+            ["schedule_close_enabled", "close", c.schedule_close_enabled !== false]].map(([field, key, on]) => el("button", {
+            class: "chip-toggle flag", type: "button", text: this._t(`dash.${key}Short`),
+            title: this._t(`dash.${key}Flag`), "aria-pressed": String(on), disabled: busyAll,
+            "aria-label": `${this._t("dash.flagAria", { what: this._t(`dash.${key}Flag`), name })} : ${this._t(on ? "common.on" : "common.off")}`,
             onclick: () => this._command(
-              { command: "set_enabled", entity_id: c.entity_id, enabled: c.enabled === false }, `cover-${c.entity_id}`),
-          }),
+              { command: "set_enabled", entity_id: c.entity_id, enabled: !on, field }, `cover-${c.entity_id}`),
+          })),
           el("button", {
             class: "btn", type: "button", text: paused ? this._t("dash.resume") : this._t("dash.pause"),
             disabled: busyAll || c.enabled === false,
@@ -1924,6 +1948,12 @@ class VoletsIntelligentsPanel extends HTMLElement {
 
   _badge(color, text) {
     return el("span", { class: `badge c-${color}` }, el("span", { class: "dot", "aria-hidden": "true" }), text);
+  }
+
+  _dropdown(options, active, onPick, label, disabled) {
+    return el("select", { class: "sel", "aria-label": label, disabled, value: active,
+      onchange: (e) => onPick(e.target.value) },
+      options.map(([value, text]) => el("option", { value, text })));
   }
 
   _segmented(options, active, onPick, label, disabled) {

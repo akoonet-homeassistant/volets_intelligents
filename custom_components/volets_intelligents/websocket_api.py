@@ -235,6 +235,7 @@ def ws_subscribe_status(hass: HomeAssistant, connection, msg: dict[str, Any]) ->
         vol.Optional("value"): str,
         vol.Optional("entity_id"): str,
         vol.Optional("enabled"): bool,
+        vol.Optional("field"): vol.In(("enabled", "schedule_open_enabled", "schedule_close_enabled")),
         vol.Optional("minutes"): vol.All(int, vol.Range(min=1, max=1440)),
     }
 )
@@ -265,7 +266,7 @@ async def ws_command(hass: HomeAssistant, connection, msg: dict[str, Any]) -> No
         elif command == "set_enabled":
             if not msg.get("entity_id") or "enabled" not in msg:
                 raise HomeAssistantError("entity_id et enabled sont requis")
-            await manager.async_set_cover_enabled(msg["entity_id"], msg["enabled"])
+            await manager.async_set_cover_flag(msg["entity_id"], msg.get("field", "enabled"), msg["enabled"])
         else:
             await manager.async_evaluate()
     except HomeAssistantError as err:

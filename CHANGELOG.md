@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.10.16
+
+- Carte Lovelace : chaque volet a trois boutons **S / O / F** (S = protection solaire, O = ouverture du matin horaire, F = fermeture du soir horaire) qui activent ou coupent ces fonctions indépendamment, à côté du bouton Pause.
+- Carte : le mode (Auto / Manuel / Arrêt) et le scénario (Hiver / Été) sont maintenant deux listes déroulantes côte à côte.
+- Carte, nouvelles options : `show_solar`, `show_open`, `show_close` (afficher ou masquer S, O, F), `order` (ordre des volets) et `scenarios`.
+- Carte : éditeur visuel (légendes S/O/F explicites, ordre des volets avec boutons ▲▼, cases des scénarios).
+- Panneau, onglet « Tableau de bord » : le bouton « Auto » de chaque volet est remplacé par les trois boutons S / O / F (avec légende), et le mode global et le scénario deviennent deux listes déroulantes.
+- API WebSocket : la commande `set_enabled` accepte un paramètre optionnel `field` (`enabled`, `schedule_open_enabled`, `schedule_close_enabled`).
+- README : section carte mise à jour, captures régénérées.
+
 ## 2026.10.15
 
 - Protection solaire, ouverture horaire et fermeture horaire sont maintenant trois réglages autonomes par volet. L'interrupteur `switch.volets_<nom>_auto` ne commande plus que la protection solaire : un volet dont la protection solaire est coupée s'ouvre et se ferme quand même aux horaires si ses cases « Ouverture du matin horaire » et « Fermeture du soir horaire » sont cochées (avant, il ignorait aussi les horaires).

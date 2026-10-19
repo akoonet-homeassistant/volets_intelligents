@@ -960,6 +960,18 @@ class VoletsManager:
                 cover["enabled"] = enabled
         await self.async_set_config(config)
 
+    async def async_set_cover_flag(self, entity_id: str, field: str, enabled: bool) -> None:
+        """Active ou désactive un volet : `enabled` (protection solaire), `schedule_open_enabled` ou `schedule_close_enabled`."""
+        if field not in ("enabled", "schedule_open_enabled", "schedule_close_enabled"):
+            raise HomeAssistantError(f"Réglage inconnu : {field}")
+        if not any(c["entity_id"] == entity_id for c in self.config["covers"]):
+            raise HomeAssistantError(f"Volet inconnu : {entity_id}")
+        config = {**self.config, "covers": [dict(c) for c in self.config["covers"]]}
+        for cover in config["covers"]:
+            if cover["entity_id"] == entity_id:
+                cover[field] = enabled
+        await self.async_set_config(config)
+
     async def async_set_mode(self, mode: str) -> None:
         if mode not in MODES:
             raise HomeAssistantError(f"Mode inconnu : {mode}")

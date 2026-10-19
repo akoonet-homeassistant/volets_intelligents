@@ -34,6 +34,25 @@ const I18N = {
     "card.facadeNow": "au soleil",
     "card.facadeNever": "pas de soleil aujourd'hui",
     "card.reopenAt": "Remonte au plus tard vers {time}",
+    "card.solar": "Protection solaire",
+    "card.open": "Ouverture horaire",
+    "card.close": "Fermeture horaire",
+    "card.solarShort": "S",
+    "card.openShort": "O",
+    "card.closeShort": "F",
+    "card.flagAria": "{what} de {name} : {state}",
+    "card.on": "activée",
+    "card.off": "désactivée",
+    "card.badConfig": "Paramètre « {key} » invalide : {expected}.",
+    "editor.title": "Titre",
+    "editor.show": "Fonctions affichées pour chaque volet",
+    "editor.order": "Ordre des volets",
+    "editor.orderHint": "Les volets non listés viennent après, dans l'ordre d'origine.",
+    "editor.up": "Monter",
+    "editor.down": "Descendre",
+    "editor.reset": "Ordre d'origine",
+    "editor.scenarios": "Scénarios proposés",
+    "editor.loading": "Chargement des volets…",
     "err.notInstalled": "L'intégration « Volets Intelligents » n'est pas installée ou n'est pas démarrée.",
     "err.unknown": "Erreur inconnue.",
     "err.unauthorized": "Vous n'avez pas le droit d'effectuer cette action",
@@ -85,6 +104,25 @@ const I18N = {
     "card.facadeNow": "in the sun",
     "card.facadeNever": "no sun today",
     "card.reopenAt": "Reopens by {time} at the latest",
+    "card.solar": "Sun protection",
+    "card.open": "Scheduled opening",
+    "card.close": "Scheduled closing",
+    "card.solarShort": "S",
+    "card.openShort": "O",
+    "card.closeShort": "C",
+    "card.flagAria": "{what} for {name}: {state}",
+    "card.on": "on",
+    "card.off": "off",
+    "card.badConfig": "Invalid “{key}” parameter: {expected}.",
+    "editor.title": "Title",
+    "editor.show": "Functions shown for each shutter",
+    "editor.order": "Shutter order",
+    "editor.orderHint": "Shutters not listed come after, in their original order.",
+    "editor.up": "Move up",
+    "editor.down": "Move down",
+    "editor.reset": "Original order",
+    "editor.scenarios": "Scenarios offered",
+    "editor.loading": "Loading shutters…",
     "err.notInstalled": "The “Volets Intelligents” integration is not installed or not running.",
     "err.unknown": "Unknown error.",
     "err.unauthorized": "You are not allowed to perform this action",
@@ -121,6 +159,7 @@ function translate(lang, key, vars) {
   return vars ? text.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : text;
 }
 
+const DEFAULT_CONFIG = { title: "Volets Intelligents", show_solar: true, show_open: true, show_close: true, order: [], scenarios: [] };
 const MODE_IDS = ["auto", "manual", "off"];
 // Clés fixes des scénarios (contrat §1), utilisées si le statut ne fournit pas `scenarios`.
 const SCENARIO_IDS = ["summer", "winter", "vacation", "off"];
@@ -190,25 +229,48 @@ h2 { margin: 0; font-size: 18px; font-weight: 500; }
 .c-red { --c: var(--error-color, #db4437); }
 .c-grey { --c: var(--disabled-color, #9e9e9e); }
 
-.seg { display: flex; border: 1px solid var(--primary-color, #03a9f4); border-radius: 8px; overflow: hidden; }
-.seg-btn {
-  flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 6px; border: 0;
-  background: transparent; color: var(--primary-text-color, #212121); cursor: pointer;
+/* Mode et scénario : deux listes déroulantes côte à côte. */
+.selectors { display: flex; gap: 8px; align-items: flex-end; }
+.sel { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sel > span { font-size: 12px; color: var(--secondary-text-color, #727272); }
+.sel select {
+  width: 100%; min-height: 44px; padding: 0 8px; border-radius: 8px; font: inherit; cursor: pointer;
+  border: 1px solid var(--primary-color, #03a9f4); background: var(--card-background-color, #fff);
+  color: var(--primary-text-color, #212121);
 }
-.seg-btn + .seg-btn { border-left: 1px solid var(--primary-color, #03a9f4); }
-.seg-btn.on { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); }
-.seg-btn:disabled, .btn:disabled { opacity: .5; cursor: default; }
+.sel select:disabled { opacity: .5; cursor: default; }
+.sel select:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+.btn:disabled { opacity: .5; cursor: default; }
 button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
 
-.row { display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid var(--divider-color, #e0e0e0); padding-top: 4px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 48px; border-top: 1px solid var(--divider-color, #e0e0e0); padding-top: 4px; }
 .row:first-of-type { border-top: 0; }
 .gbody > .row:first-child { border-top: 0; }
 .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--c); flex: none; }
-.name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.name { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }
+.ctl { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .name.link { cursor: pointer; border-radius: 6px; }
 .name.link:hover { background: var(--secondary-background-color, rgba(127,127,127,.12)); }
 .pos { white-space: nowrap; }
+.flags { display: flex; gap: 4px; }
+.flag {
+  min-width: 36px; min-height: 36px; padding: 0 6px; border-radius: 8px; cursor: pointer; font-weight: 600;
+  border: 1px solid var(--divider-color, #ccc); background: transparent; color: var(--disabled-color, #9e9e9e);
+}
+.flag.on { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); background: rgba(67, 160, 71, .14); }
+.flag:disabled { opacity: .5; cursor: default; }
+.ed { display: flex; flex-direction: column; gap: 12px; font-family: var(--paper-font-body1_-_font-family, Roboto, "Segoe UI", sans-serif); color: var(--primary-text-color, #212121); }
+.ed label.f { display: flex; flex-direction: column; gap: 4px; }
+.ed input[type="text"] { min-height: 40px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--divider-color, #ccc); background: var(--card-background-color, #fff); color: inherit; font: inherit; }
+.ed .chk { display: flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; }
+.ed fieldset { border: 1px solid var(--divider-color, #ccc); border-radius: 8px; margin: 0; padding: 8px 12px; display: flex; flex-direction: column; }
+.ed legend { padding: 0 6px; color: var(--secondary-text-color, #727272); }
+.ed .ord { display: flex; align-items: center; gap: 6px; min-height: 40px; border-top: 1px solid var(--divider-color, #e0e0e0); }
+.ed .ord:first-of-type { border-top: 0; }
+.ed .ord .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed .ord button { min-width: 36px; min-height: 36px; border-radius: 8px; border: 1px solid var(--divider-color, #ccc); background: transparent; color: inherit; cursor: pointer; }
+.ed .ord button:disabled { opacity: .4; cursor: default; }
 .groups { display: flex; flex-direction: column; gap: 16px; }
 .group { display: flex; flex-direction: column; gap: 4px; }
 .ghead {
@@ -236,7 +298,7 @@ class VoletsIntelligentsCard extends HTMLElement {
     super();
     this._hass = null;
     this._lang = "fr";
-    this._config = { title: "Volets Intelligents" };
+    this._config = { ...DEFAULT_CONFIG };
     this._status = null;
     this._error = null; // erreur d'abonnement
     this._cmdError = null; // erreur de la dernière commande
@@ -264,12 +326,27 @@ class VoletsIntelligentsCard extends HTMLElement {
     return this._t("err.unknown");
   }
 
-  /** Configuration Lovelace : seule `title` (optionnelle) est reconnue. */
+  /**
+   * Configuration Lovelace (toutes les clés sont optionnelles) :
+   * title ; show_solar / show_open / show_close (booléens, vrai par défaut) ;
+   * order (liste d'entity_id de volets) ; scenarios (liste de clés de scénarios proposés, vide = tous).
+   */
   setConfig(config) {
-    if (config && config.title !== undefined && typeof config.title !== "string") {
+    const cfg = config || {};
+    if (cfg.title !== undefined && typeof cfg.title !== "string") {
       throw new Error(this._t("card.badTitle"));
     }
-    this._config = { title: "Volets Intelligents", ...(config || {}) };
+    for (const key of ["show_solar", "show_open", "show_close"]) {
+      if (cfg[key] !== undefined && typeof cfg[key] !== "boolean") {
+        throw new Error(this._t("card.badConfig", { key, expected: "true / false" }));
+      }
+    }
+    for (const key of ["order", "scenarios"]) {
+      if (cfg[key] !== undefined && !(Array.isArray(cfg[key]) && cfg[key].every((x) => typeof x === "string"))) {
+        throw new Error(this._t("card.badConfig", { key, expected: "list of strings" }));
+      }
+    }
+    this._config = { ...DEFAULT_CONFIG, ...cfg };
     this._render();
   }
 
@@ -280,6 +357,10 @@ class VoletsIntelligentsCard extends HTMLElement {
 
   static getStubConfig() {
     return {};
+  }
+
+  static getConfigElement() {
+    return document.createElement("volets-intelligents-card-editor");
   }
 
   set hass(hass) {
@@ -355,7 +436,8 @@ class VoletsIntelligentsCard extends HTMLElement {
     if (!st) return "";
     return JSON.stringify([st.mode, st.scenario, st.scenario_kind, st.scenarios || null,
       Object.entries(st.facades || {}).map(([id, f]) => [id, f.name, f.exposed, f.windows, f.next_end]),
-      (st.covers || []).map((c) => [c.entity_id, c.name, c.facade, c.status, c.reason, c.position, c.enabled, c.paused_until])]);
+      (st.covers || []).map((c) => [c.entity_id, c.name, c.facade, c.status, c.reason, c.position, c.enabled,
+        c.schedule_open_enabled, c.schedule_close_enabled, c.paused_until])]);
   }
 
   async _command(payload) {
@@ -393,7 +475,9 @@ class VoletsIntelligentsCard extends HTMLElement {
     const labels = st.scenarios || {};
     const keys = Object.keys(labels).length ? Object.keys(labels) : SCENARIO_IDS.slice();
     if (!keys.includes(st.scenario)) keys.push(st.scenario);
-    const scenarios = keys.map((key) => [
+    const wanted = this._config.scenarios || [];
+    const shown = wanted.length ? keys.filter((key) => wanted.includes(key) || key === st.scenario) : keys;
+    const scenarios = shown.map((key) => [
       key, labels[key] || (SCENARIO_IDS.includes(key) ? this._t(`scenario.${key}`) : key),
     ]);
 
@@ -401,10 +485,11 @@ class VoletsIntelligentsCard extends HTMLElement {
     card.append(...[
       this._error ? el("div", { class: "notice c-red", role: "alert" },
         el("span", { text: this._t("card.interrupted", { error: this._error }) }), retry) : null,
-      this._segmented(MODE_IDS.map((m) => [m, this._t(`mode.${m}`)]), st.mode, this._t("mode.group"),
-        (v) => this._command({ command: "set_mode", value: v })),
-      this._segmented(scenarios, st.scenario, this._t("scenario.group"),
-        (v) => this._command({ command: "set_scenario", value: v })),
+      el("div", { class: "selectors" },
+        this._dropdown(MODE_IDS.map((m) => [m, this._t(`mode.${m}`)]), st.mode, this._t("mode.group"),
+          (v) => this._command({ command: "set_mode", value: v })),
+        this._dropdown(scenarios, st.scenario, this._t("scenario.group"),
+          (v) => this._command({ command: "set_scenario", value: v }))),
       this._cmdError ? el("span", { class: "err", role: "alert", text: this._cmdError }) : null,
       this._groups(st),
       (st.covers || []).length ? this._option() : null,
@@ -463,7 +548,7 @@ class VoletsIntelligentsCard extends HTMLElement {
 
   /** Volets regroupés par façade : plage d'ensoleillement du jour en en-tête de chaque groupe. */
   _groups(st) {
-    const covers = st.covers || [];
+    const covers = this._ordered(st.covers || []);
     const facades = st.facades || {};
     const groups = Object.entries(facades)
       .map(([id, f]) => ({ id, facade: f, covers: covers.filter((c) => c.facade === id) }))
@@ -471,6 +556,11 @@ class VoletsIntelligentsCard extends HTMLElement {
     const known = new Set(Object.keys(facades));
     const others = covers.filter((c) => !known.has(c.facade));
     if (others.length) groups.push({ id: "", facade: null, covers: others });
+    // Les façades suivent l'ordre choisi : celle dont le premier volet vient en tête passe en premier.
+    if ((this._config.order || []).length) {
+      const rank = (g) => covers.indexOf(g.covers[0]);
+      groups.sort((a, b) => rank(a) - rank(b));
+    }
     return el("div", { class: "groups" }, groups.map((g) => {
       const f = g.facade;
       const title = f ? (f.name || g.id) : this._t("card.other");
@@ -504,6 +594,17 @@ class VoletsIntelligentsCard extends HTMLElement {
     }));
   }
 
+  /** Volets dans l'ordre choisi (config `order`), les autres à la suite dans l'ordre d'origine. */
+  _ordered(covers) {
+    const order = this._config.order || [];
+    if (!order.length) return covers;
+    const rank = (c) => {
+      const i = order.indexOf(c.entity_id);
+      return i < 0 ? order.length : i;
+    };
+    return covers.map((c, i) => [c, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map((x) => x[0]);
+  }
+
   /** Case à cocher : façades repliables (variante C) ou toujours dépliées (variante A). */
   _option() {
     const id = "opt-collapsible";
@@ -515,13 +616,12 @@ class VoletsIntelligentsCard extends HTMLElement {
       this._t("card.collapsible"));
   }
 
-  _segmented(options, active, label, onPick) {
-    return el("div", { class: "seg", role: "group", "aria-label": label },
-      options.map(([value, text]) => el("button", {
-        class: `seg-btn${value === active ? " on" : ""}`, type: "button", text,
-        "aria-pressed": String(value === active), disabled: this._busy,
-        onclick: () => onPick(value),
-      })));
+  /** Liste déroulante avec son intitulé (mode global, scénario). */
+  _dropdown(options, active, label, onPick) {
+    return el("label", { class: "sel" },
+      el("span", { text: label }),
+      el("select", { disabled: this._busy, onchange: (ev) => onPick(ev.target.value) },
+        options.map(([value, text]) => el("option", { value, text, selected: value === active }))));
   }
 
   /** Été : heure à laquelle un volet protégé par nous remonte au plus tard (fin du soleil sur sa façade). */
@@ -536,6 +636,25 @@ class VoletsIntelligentsCard extends HTMLElement {
   _moreInfo(entityId) {
     this.dispatchEvent(new CustomEvent("hass-more-info", {
       bubbles: true, composed: true, detail: { entityId },
+    }));
+  }
+
+  /** Interrupteurs S / O / F d'un volet (protection solaire, ouverture et fermeture horaires). */
+  _flags(c, name) {
+    const defs = [
+      ["show_solar", "enabled", "solar", c.enabled !== false],
+      ["show_open", "schedule_open_enabled", "open", c.schedule_open_enabled !== false],
+      ["show_close", "schedule_close_enabled", "close", c.schedule_close_enabled !== false],
+    ].filter(([cfg]) => this._config[cfg] !== false);
+    if (!defs.length) return null;
+    return el("span", { class: "flags", role: "group" }, defs.map(([, field, key, on]) => {
+      const what = this._t(`card.${key}`);
+      return el("button", {
+        class: `flag${on ? " on" : ""}`, type: "button", text: this._t(`card.${key}Short`), title: what,
+        "aria-pressed": String(on), disabled: this._busy,
+        "aria-label": this._t("card.flagAria", { what, name, state: this._t(on ? "card.on" : "card.off") }),
+        onclick: () => this._command({ command: "set_enabled", entity_id: c.entity_id, enabled: !on, field }),
+      });
     }));
   }
 
@@ -559,13 +678,145 @@ class VoletsIntelligentsCard extends HTMLElement {
         el("span", { class: "muted small", title: c.reason || "", text: label }),
         this._reopenText(c, st) ? el("span", { class: "small c-orange reopen", text: this._reopenText(c, st) }) : null),
       el("span", { class: "pos muted", text: typeof c.position === "number" ? `${c.position}\u00a0%` : "—" }),
-      el("button", {
-        class: "btn", type: "button", text: paused ? this._t("card.resume") : this._t("card.pause"),
-        disabled: this._busy || c.enabled === false,
-        "aria-label": this._t(paused ? "card.resumeAria" : "card.pauseAria", { name }),
-        onclick: () => this._command({ command: paused ? "resume" : "pause", entity_id: c.entity_id }),
-      }));
+      el("div", { class: "ctl" },
+        this._flags(c, name),
+        el("button", {
+          class: "btn", type: "button", text: paused ? this._t("card.resume") : this._t("card.pause"),
+          disabled: this._busy || c.enabled === false,
+          "aria-label": this._t(paused ? "card.resumeAria" : "card.pauseAria", { name }),
+          onclick: () => this._command({ command: paused ? "resume" : "pause", entity_id: c.entity_id }),
+        })));
   }
+}
+
+/** Éditeur visuel de la carte (titre, fonctions affichées, ordre des volets, scénarios proposés). */
+class VoletsIntelligentsCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this._hass = null;
+    this._lang = "fr";
+    this._config = { ...DEFAULT_CONFIG };
+    this._covers = null; // [{ entity_id, name }] une fois le statut lu
+    this._scenarios = null; // [[clé, libellé]]
+    this._loading = false;
+    this.attachShadow({ mode: "open" });
+    this.shadowRoot.append(el("style", { text: CSS }), (this._root = el("div")));
+    this._render();
+  }
+
+  _t(key, vars) {
+    return translate(this._lang, key, vars);
+  }
+
+  setConfig(config) {
+    this._config = { ...DEFAULT_CONFIG, ...(config || {}) };
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    const lang = String((hass && hass.language) || "fr").slice(0, 2).toLowerCase();
+    const next = lang in I18N ? lang : "fr";
+    if (next !== this._lang) {
+      this._lang = next;
+      this._render();
+    }
+    if (!this._covers && !this._loading) this._load();
+  }
+  get hass() {
+    return this._hass;
+  }
+
+  async _load() {
+    this._loading = true;
+    try {
+      const { status } = await this._hass.callWS({ type: `${WS}get_status` });
+      this._covers = (status.covers || []).map((c) => ({ entity_id: c.entity_id, name: c.name || c.entity_id }));
+      const labels = status.scenarios || {};
+      const keys = Object.keys(labels).length ? Object.keys(labels) : SCENARIO_IDS.slice();
+      this._scenarios = keys.map((k) => [k, labels[k] || (SCENARIO_IDS.includes(k) ? this._t(`scenario.${k}`) : k)]);
+    } catch (_err) {
+      this._covers = [];
+      this._scenarios = [];
+    } finally {
+      this._loading = false;
+      this._render();
+    }
+  }
+
+  _emit(patch) {
+    this._config = { ...this._config, ...patch };
+    // On n'écrit dans la configuration que ce qui s'écarte des valeurs par défaut (YAML court et lisible).
+    const out = {};
+    for (const [key, value] of Object.entries(this._config)) {
+      const def = DEFAULT_CONFIG[key];
+      const same = Array.isArray(def) ? Array.isArray(value) && value.length === 0 : value === def;
+      if (key === "type" || !same) out[key] = value;
+    }
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: out }, bubbles: true, composed: true }));
+    this._render();
+  }
+
+  /** Ordre effectif : `order` de la configuration, puis les volets non listés. */
+  _currentOrder() {
+    const known = (this._covers || []).map((c) => c.entity_id);
+    const wanted = (this._config.order || []).filter((id) => known.includes(id));
+    return wanted.concat(known.filter((id) => !wanted.includes(id)));
+  }
+
+  _move(index, delta) {
+    const order = this._currentOrder();
+    const target = index + delta;
+    if (target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
+    this._emit({ order });
+  }
+
+  _check(label, checked, onchange) {
+    return el("label", { class: "chk" },
+      el("input", { type: "checkbox", checked, onchange: (ev) => onchange(ev.target.checked) }), label);
+  }
+
+  _render() {
+    const names = new Map((this._covers || []).map((c) => [c.entity_id, c.name]));
+    const order = this._currentOrder();
+    const wanted = this._config.scenarios || [];
+    const body = [
+      el("label", { class: "f" }, el("span", { class: "muted small", text: this._t("editor.title") }),
+        el("input", { type: "text", value: this._config.title || "", onchange: (ev) => this._emit({ title: ev.target.value }) })),
+      el("fieldset", {}, el("legend", { text: this._t("editor.show") }),
+        this._check(`${this._t("card.solarShort")} – ${this._t("card.solar")}`, this._config.show_solar !== false, (v) => this._emit({ show_solar: v })),
+        this._check(`${this._t("card.openShort")} – ${this._t("card.open")}`, this._config.show_open !== false, (v) => this._emit({ show_open: v })),
+        this._check(`${this._t("card.closeShort")} – ${this._t("card.close")}`, this._config.show_close !== false, (v) => this._emit({ show_close: v }))),
+    ];
+    if (this._scenarios && this._scenarios.length) {
+      body.push(el("fieldset", {}, el("legend", { text: this._t("editor.scenarios") }),
+        this._scenarios.map(([key, label]) => this._check(label, !wanted.length || wanted.includes(key), (v) => {
+          const current = wanted.length ? wanted.slice() : this._scenarios.map(([k]) => k);
+          const next = v ? current.concat(current.includes(key) ? [] : [key]) : current.filter((k) => k !== key);
+          // Tous cochés = pas de filtre ; on garde toujours au moins un scénario.
+          this._emit({ scenarios: next.length === this._scenarios.length || !next.length ? [] : next });
+        }))));
+    }
+    body.push(el("fieldset", {}, el("legend", { text: this._t("editor.order") }),
+      this._covers === null ? el("span", { class: "muted small", text: this._t("editor.loading") }) : [
+        el("span", { class: "muted small", text: this._t("editor.orderHint") }),
+        order.map((id, i) => el("div", { class: "ord" },
+          el("span", { class: "nm", text: names.get(id) || id }),
+          el("button", { type: "button", text: "▲", title: this._t("editor.up"), "aria-label": `${this._t("editor.up")} ${names.get(id) || id}`,
+            disabled: i === 0, onclick: () => this._move(i, -1) }),
+          el("button", { type: "button", text: "▼", title: this._t("editor.down"), "aria-label": `${this._t("editor.down")} ${names.get(id) || id}`,
+            disabled: i === order.length - 1, onclick: () => this._move(i, 1) }))),
+        (this._config.order || []).length
+          ? el("button", { class: "btn", type: "button", text: this._t("editor.reset"), onclick: () => this._emit({ order: [] }) })
+          : null,
+      ]));
+    this._root.replaceChildren(el("div", { class: "ed" }, body));
+  }
+}
+
+if (!customElements.get("volets-intelligents-card-editor")) {
+  customElements.define("volets-intelligents-card-editor", VoletsIntelligentsCardEditor);
 }
 
 if (!customElements.get("volets-intelligents-card")) {

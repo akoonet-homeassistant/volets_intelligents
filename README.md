@@ -115,7 +115,7 @@ demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenc
 
 ### Pilotage de chaque volet
 
-- **Bouton « Auto » par volet** : dans le tableau de bord du panneau, un clic active ou désactive la **protection solaire** d'un volet. C'est l'équivalent de l'entité `switch.volets_*_auto`. L'ouverture et la fermeture horaires se règlent séparément (`switch.volets_*_horaire_ouverture` et `switch.volets_*_horaire_fermeture`).
+- **Boutons S / O / F par volet** : dans le tableau de bord du panneau (comme sur la carte), trois boutons activent ou coupent séparément la **protection solaire** (S, équivalent de `switch.volets_*_auto`), l'**ouverture horaire du matin** (O, `switch.volets_*_horaire_ouverture`) et la **fermeture horaire du soir** (F, `switch.volets_*_horaire_fermeture`). Le mode global et le scénario se choisissent dans deux listes déroulantes.
 - **Position voulue par volet** : chaque volet a sa propre position de protection (pourcentage,
   bouton « position favorite » ou fermeture complète).
 - **Pause automatique après action manuelle** : si vous bougez un volet à la main, il est laissé
@@ -489,10 +489,33 @@ type: custom:volets-intelligents-card
 title: Volets
 ```
 
-La carte permet de choisir le mode et le scénario, et affiche les volets **regroupés par façade**. Le bandeau de
-chaque façade donne sa plage d'exposition du jour et signale la façade actuellement au soleil. En été, un volet
-protégé du soleil indique l'heure à laquelle il remonte au plus tard (fin de l'exposition de sa façade). Un clic sur
-le nom d'un volet ouvre la fenêtre de contrôle de son entité.
+La carte permet de choisir le mode et le scénario (deux listes déroulantes côte à côte), et affiche les volets
+**regroupés par façade**. Le bandeau de chaque façade donne sa plage d'exposition du jour et signale la façade
+actuellement au soleil. En été, un volet protégé du soleil indique l'heure à laquelle il remonte au plus tard (fin de
+l'exposition de sa façade). Un clic sur le nom d'un volet ouvre la fenêtre de contrôle de son entité.
+
+Chaque volet porte trois interrupteurs : **S** (protection solaire), **O** (ouverture horaire) et **F** (fermeture
+horaire). Un bouton vert est activé, un bouton gris est désactivé ; ils agissent comme les interrupteurs
+`switch.volets_*_auto`, `switch.volets_*_horaire_ouverture` et `switch.volets_*_horaire_fermeture`.
+
+Options de la carte (toutes facultatives, réglables dans l'éditeur visuel de la carte) :
+
+```yaml
+type: custom:volets-intelligents-card
+title: Volets
+show_solar: true     # interrupteur S (protection solaire) ; false = masqué
+show_open: true      # interrupteur O (ouverture horaire) ; false = masqué
+show_close: false    # interrupteur F (fermeture horaire) ; false = masqué
+order:               # ordre des volets (les volets non listés viennent après)
+  - cover.calyps_home_volet_du_bar
+  - cover.calyps_home_volet_canape
+scenarios:           # scénarios proposés (vide ou absent = tous)
+  - summer
+  - winter
+```
+
+L'éditeur visuel permet aussi de réordonner les volets avec les boutons ▲ ▼. Les façades suivent l'ordre choisi :
+celle dont le premier volet vient en tête passe en premier.
 
 ![Carte Lovelace](docs/screenshots/carte-facades.png)
 
@@ -502,6 +525,8 @@ sur son bandeau. Le choix est mémorisé dans le navigateur (propre à chaque ap
 ![Carte Lovelace, façades repliées](docs/screenshots/carte-facades-repliees.png)
 
 ![Carte Lovelace, une façade dépliée](docs/screenshots/carte-facades-repliables.png)
+
+![Éditeur visuel de la carte](docs/screenshots/carte-editeur.png)
 
 Les captures utilisent des données de démonstration.
 

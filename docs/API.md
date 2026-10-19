@@ -201,7 +201,7 @@ Commandes (`command`) :
 - `set_scenario` : `value` ∈ clés de `scenarios`
 - `pause` : `entity_id` (optionnel = tous), `minutes` (défaut = override_pause_minutes)
 - `resume` : `entity_id` (optionnel = tous)
-- `set_enabled` : `entity_id` (requis), `enabled` (booléen requis) — active/désactive la gestion du volet (équivaut à `switch.volets_*_auto`)
+- `set_enabled` : `entity_id` (requis), `enabled` (booléen requis), `field` (optionnel : `enabled` = protection solaire, par défaut ; `schedule_open_enabled` = ouverture horaire ; `schedule_close_enabled` = fermeture horaire) — active/désactive la fonction du volet (équivaut à `switch.volets_*_auto`, `switch.volets_*_horaire_ouverture`, `switch.volets_*_horaire_fermeture`)
 - `evaluate` : force une évaluation immédiate
 
 Côté frontend : `hass.callWS({type: "volets_intelligents/get_config"})` et

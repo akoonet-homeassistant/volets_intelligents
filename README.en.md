@@ -113,7 +113,7 @@ opening at any other time triggers nothing.
 
 ### Controlling each shutter
 
-- **"Auto" button per shutter**: in the panel's dashboard, one click enables or disables **solar protection** for a shutter. It is the equivalent of the `switch.volets_*_auto` entity. Scheduled opening and closing are set separately (`switch.volets_*_horaire_ouverture` and `switch.volets_*_horaire_fermeture`).
+- **S / O / C buttons per shutter**: in the panel's dashboard (as on the card), three buttons separately enable or disable **solar protection** (S, equivalent of `switch.volets_*_auto`), **scheduled morning opening** (O, `switch.volets_*_horaire_ouverture`) and **scheduled evening closing** (C, `switch.volets_*_horaire_fermeture`). Global mode and scenario are picked from two drop-down lists.
 - **Wanted position per shutter**: each shutter has its own protection position (percentage, "favorite
   position" button or full close).
 - **Automatic pause after a manual action**: if you move a shutter by hand, it is left alone for the chosen
@@ -487,10 +487,33 @@ type: custom:volets-intelligents-card
 title: Shutters
 ```
 
-The card lets you pick the mode and the scenario, and lists the shutters **grouped by facade**. Each facade header
-shows its sun exposure window for the day and flags the facade that is currently in the sun. In summer, a
-sun-protected shutter shows the latest time it will reopen (end of sun exposure on its facade). Clicking a shutter's
-name opens the control dialog of its entity.
+The card lets you pick the mode and the scenario (two drop-down lists side by side), and lists the shutters
+**grouped by facade**. Each facade header shows its sun exposure window for the day and flags the facade that is
+currently in the sun. In summer, a sun-protected shutter shows the latest time it will reopen (end of sun exposure on
+its facade). Clicking a shutter's name opens the control dialog of its entity.
+
+Each shutter has three switches: **S** (sun protection), **O** (scheduled opening) and **C** (scheduled closing). A
+green button is on, a grey one is off; they behave like the `switch.volets_*_auto`,
+`switch.volets_*_horaire_ouverture` and `switch.volets_*_horaire_fermeture` switches.
+
+Card options (all optional, also available in the card's visual editor):
+
+```yaml
+type: custom:volets-intelligents-card
+title: Shutters
+show_solar: true     # S switch (sun protection); false = hidden
+show_open: true      # O switch (scheduled opening); false = hidden
+show_close: false    # C switch (scheduled closing); false = hidden
+order:               # shutter order (shutters not listed come after)
+  - cover.calyps_home_volet_du_bar
+  - cover.calyps_home_volet_canape
+scenarios:           # scenarios offered (empty or absent = all)
+  - summer
+  - winter
+```
+
+The visual editor also lets you reorder the shutters with the ▲ ▼ buttons. Facades follow the chosen order: the one
+whose first shutter comes first is listed first.
 
 ![Lovelace card](docs/screenshots/carte-facades-en.png)
 
@@ -500,6 +523,8 @@ click on its header. The choice is remembered in the browser (per device).
 ![Lovelace card, facades folded](docs/screenshots/carte-facades-repliees-en.png)
 
 ![Lovelace card, one facade unfolded](docs/screenshots/carte-facades-repliables-en.png)
+
+![Visual card editor](docs/screenshots/carte-editeur-en.png)
 
 The screenshots use demonstration data.
 
