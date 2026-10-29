@@ -152,6 +152,10 @@ opening at any other time triggers nothing.
 
 ## Installation
 
+One-click install button (requires [My Home Assistant](https://my.home-assistant.io) to be set up):
+
+[![Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=volets_intelligents&category=integration)
+
 1. HACS > Integrations: search for "Volets Intelligents" (the integration is in the HACS default catalog) and download it.
 2. Restart Home Assistant.
 3. Settings > Devices & services > Add integration > Volets Intelligents.

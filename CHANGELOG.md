@@ -4,6 +4,7 @@
 
 - L'intégration est maintenant dans le catalogue par défaut de HACS : elle s'installe en la recherchant simplement dans HACS (« Volets Intelligents »), sans ajouter de dépôt personnalisé.
 - README (FR et EN) : la section Installation commence par la recherche dans HACS ; l'ajout comme dépôt personnalisé reste indiqué en solution de secours.
+- README (FR et EN) : bouton « Open your Home Assistant instance » qui ouvre directement l'intégration dans HACS (My Home Assistant).
 - README (FR et EN) : badges release, licence et HACS Default sous le titre.
 - Aucun changement de fonctionnement.
 

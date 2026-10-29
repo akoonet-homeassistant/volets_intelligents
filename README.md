@@ -154,6 +154,10 @@ demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenc
 
 ## Installation
 
+Bouton d'installation rapide (nécessite d'avoir configuré [My Home Assistant](https://my.home-assistant.io)) :
+
+[![Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=volets_intelligents&category=integration)
+
 1. HACS > Intégrations : recherchez « Volets Intelligents » (l'intégration est dans le catalogue par défaut de HACS) et téléchargez-la.
 2. Redémarrez Home Assistant.
 3. Paramètres > Appareils et services > Ajouter une intégration > Volets Intelligents.
