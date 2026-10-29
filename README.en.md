@@ -148,10 +148,12 @@ opening at any other time triggers nothing.
 
 ## Installation
 
-1. HACS > Integrations > ⋮ menu > Custom repositories: add this repository (category Integration).
-2. Download "Volets Intelligents", then restart Home Assistant.
+1. HACS > Integrations: search for "Volets Intelligents" (the integration is in the HACS default catalog) and download it.
+2. Restart Home Assistant.
 3. Settings > Devices & services > Add integration > Volets Intelligents.
 4. Open the **Volets** panel in the sidebar and configure.
+
+If the search does not find it (HACS not refreshed yet, for example), add it as a custom repository: HACS > Integrations > ⋮ menu > Custom repositories, paste this repository's address (category Integration), then start again at step 1.
 
 Minimum Home Assistant version: 2026.3.0. The panel and the card are available in French and English.
 

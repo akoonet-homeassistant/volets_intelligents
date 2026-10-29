@@ -150,10 +150,12 @@ demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenc
 
 ## Installation
 
-1. HACS > Intégrations > menu ⋮ > Dépôts personnalisés : ajoutez ce dépôt (catégorie Intégration).
-2. Téléchargez « Volets Intelligents », puis redémarrez Home Assistant.
+1. HACS > Intégrations : recherchez « Volets Intelligents » (l'intégration est dans le catalogue par défaut de HACS) et téléchargez-la.
+2. Redémarrez Home Assistant.
 3. Paramètres > Appareils et services > Ajouter une intégration > Volets Intelligents.
 4. Ouvrez le panneau **Volets** dans la barre latérale et configurez.
+
+Si la recherche ne la trouve pas (HACS pas encore à jour, par exemple), ajoutez-la comme dépôt personnalisé : HACS > Intégrations > menu ⋮ > Dépôts personnalisés, collez l'adresse de ce dépôt (catégorie Intégration), puis reprenez à l'étape 1.
 
 Version minimale de Home Assistant : 2026.3.0. Le panneau et la carte sont disponibles en français et en anglais.
 
