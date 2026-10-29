@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.10.17
+
+- L'intégration est maintenant dans le catalogue par défaut de HACS : elle s'installe en la recherchant simplement dans HACS (« Volets Intelligents »), sans ajouter de dépôt personnalisé.
+- README (FR et EN) : la section Installation commence par la recherche dans HACS ; l'ajout comme dépôt personnalisé reste indiqué en solution de secours.
+- README (FR et EN) : badges release, licence et HACS Default sous le titre.
+- Aucun changement de fonctionnement.
+
 ## 2026.10.16
 
 - Carte Lovelace : chaque volet a trois boutons **S / O / F** (S = protection solaire, O = ouverture du matin horaire, F = fermeture du soir horaire) qui activent ou coupent ces fonctions indépendamment, à côté du bouton Pause.
