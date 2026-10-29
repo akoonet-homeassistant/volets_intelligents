@@ -1,5 +1,9 @@
 # Volets Intelligents
 
+[![release](https://img.shields.io/github/v/release/akoonet-homeassistant/volets_intelligents?label=release&color=blue)](https://github.com/akoonet-homeassistant/volets_intelligents/releases)
+[![license](https://img.shields.io/github/license/akoonet-homeassistant/volets_intelligents?color=green)](LICENSE)
+[![HACS](https://img.shields.io/badge/HACS-Default-41BDF5)](https://hacs.xyz)
+
 **Français** · [English](README.en.md)
 
 Intégration Home Assistant (HACS) qui protège la maison de la chaleur en pilotant les volets
