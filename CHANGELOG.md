@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.11.1
+
+- Gain solaire : un volet dont l'ouverture du matin (O) est coupée peut maintenant s'ouvrir avec la protection solaire (S) seule. Avant, après la première fermeture du soir, il restait bloqué indéfiniment (statut « Fermeture horaire passée… »), car rien ne levait le blocage. Désormais le blocage ne dure que le reste du jour de la fermeture et le gain solaire reprend le lendemain.
+- Aucun changement pour les volets dont l'ouverture du matin est activée.
+- README (FR et EN) : précision dans la section « Gain solaire ».
+
 ## 2026.10.17
 
 - L'intégration est maintenant dans le catalogue par défaut de HACS : elle s'installe en la recherchant simplement dans HACS (« Volets Intelligents »), sans ajouter de dépôt personnalisé.

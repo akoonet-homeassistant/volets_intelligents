@@ -85,7 +85,9 @@ La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décr
   chacune leur interrupteur et continuent de fonctionner même si la protection solaire est coupée. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
   remonter un volet fermé à 100 % ».
 - **Gain solaire** : après la fermeture horaire du soir, un scénario de gain solaire (hiver) n'ouvre plus le volet
-  jusqu'à l'ouverture du matin.
+  jusqu'à l'ouverture du matin. Si l'ouverture du matin est coupée pour ce volet (bouton O), le gain solaire n'est
+  bloqué que le reste du jour de la fermeture et reprend dès le lendemain : un volet peut ainsi s'ouvrir uniquement
+  grâce à la protection solaire (S), sans ouverture horaire.
 
 ### Fermeture du soir si une fenêtre est ouverte
 

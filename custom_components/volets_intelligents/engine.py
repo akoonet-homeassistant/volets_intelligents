@@ -209,6 +209,8 @@ def schedule_night(cover: dict[str, Any], rt: CoverRuntime, env: Env) -> bool:
 
     Sert à ne pas rouvrir un volet fermé le soir pour le gain solaire. Seuls comptent les ordres
     d'hier et d'aujourd'hui : un vieil ordre non suivi d'une ouverture ne bloque pas indéfiniment.
+    Si l'ouverture du matin est coupée pour ce volet, rien ne viendra la lever : le blocage ne
+    dure alors que le reste de la journée de la fermeture, et le gain solaire reprend le lendemain.
     """
     if env.schedule_close_at is None or not cover.get("schedule_close_enabled", True):
         return False
@@ -216,8 +218,11 @@ def schedule_night(cover: dict[str, Any], rt: CoverRuntime, env: Env) -> bool:
     if not key.startswith("close:"):
         return False
     closed_day = key[len("close:"):]
+    today = env.now.date().isoformat()
+    if not cover.get("schedule_open_enabled", True):
+        return closed_day == today
     yesterday = (env.now - timedelta(days=1)).date().isoformat()
-    return closed_day in (env.now.date().isoformat(), yesterday)
+    return closed_day in (today, yesterday)
 
 
 def _scheduled(

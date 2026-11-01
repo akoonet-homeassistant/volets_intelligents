@@ -83,7 +83,9 @@ Wind safety stays a priority in all three modes. Each mode is described under it
   opening and evening closing have their own switch and keep working even when solar protection is off. The morning opening opens even a shutter
   that is 100% closed, regardless of "Allow raising a shutter that is 100% closed".
 - **Solar gain**: after the evening scheduled closing, a solar-gain scenario (winter) no longer opens the shutter
-  until the morning opening.
+  until the morning opening. If the morning opening is disabled for that shutter (O button), solar gain is only
+  blocked for the rest of the closing day and resumes the next day: a shutter can therefore open on solar
+  protection (S) alone, with no scheduled opening.
 
 ### Evening closing if a window is open
 
