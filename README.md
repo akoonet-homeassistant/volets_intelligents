@@ -1,0 +1,589 @@
+# Volets Intelligents
+
+[![release](https://img.shields.io/github/v/release/akoonet-homeassistant/volets_intelligents?label=release&color=blue)](https://github.com/akoonet-homeassistant/volets_intelligents/releases)
+[![license](https://img.shields.io/github/license/akoonet-homeassistant/volets_intelligents?color=green)](LICENSE)
+[![HACS](https://img.shields.io/badge/HACS-Default-41BDF5)](https://hacs.xyz)
+
+**Français** · [English](README.en.md)
+
+Intégration Home Assistant (HACS) qui protège la maison de la chaleur en pilotant les volets
+selon le soleil, les températures et l'activité des habitants, avec un **panneau de gestion
+graphique** et une **carte Lovelace**. Aucun YAML à écrire.
+
+> ⚠️ **Avertissement**
+>
+> Installation et utilisation à vos propres risques. Ce projet est fourni « tel quel », sans aucune garantie de fonctionnement, de fiabilité ou d'adéquation à un usage particulier — y compris concernant le pilotage réel de vos volets. Aucune garantie n'est non plus assurée sur les modifications de code éventuellement apportées (par vous-même ou par des tiers).
+
+## Ce que fait l'intégration
+
+### Protection et scénarios
+
+- **Protection thermique (scénario Été)** : un volet s'abaisse à la position voulue quand sa façade
+  reçoit le soleil ET qu'il fait chaud dehors ou dans la pièce. Il remonte quand le soleil quitte
+  la façade ou que les températures sont redescendues.
+- **Hystérésis** : seuils de fermeture et de réouverture distincts (extérieur et pièce), plus un intervalle
+  minimal entre deux mouvements (anti-usure).
+- **Condition de réouverture (Été)** : le volet protégé se rouvre quand **pièce ET extérieur** sont redescendus sous
+  leurs seuils (recommandé), quand **pièce OU extérieur** l'est, ou selon **la pièce seulement** ou **l'extérieur
+  seulement** (l'autre seuil est alors ignoré).
+- **Quatre scénarios** : **Été** (protège de la chaleur), **Hiver** (gain solaire : rouvre un volet fermé et
+  ensoleillé quand il fait frais, ne ferme jamais), **Vacances** (ferme dès qu'une façade est exposée, sans
+  condition de température) et **Désactivé** (aucune action liée au soleil). Choix manuel, ou automatique selon
+  le mois. Chaque scénario est décrit sous son sélecteur dans le panneau.
+- **Condition d'ouverture (Hiver)** : au choix, la **pièce ET l'extérieur** sous leurs seuils (par défaut), la
+  la **pièce OU l'extérieur** (un seul suffit), la **pièce seulement** ou l'**extérieur seulement** (l'autre seuil
+  est alors ignoré). Une **limite extérieure basse** optionnelle (négative possible) empêche d'ouvrir le volet quand
+  l'extérieur est à cette température ou en dessous. Réglages dans l'onglet Protection solaire.
+- **Alarme** : choisissez une entité `alarm_control_panel` (Réglages). Chaque scénario d'action (Été, Hiver,
+  Vacances) propose deux options, indépendantes :
+  - « **Ne pas ouvrir quand l'alarme est activée** » : aucune ouverture automatique tant que l'alarme est armée
+    (états `armed_*`) ou déclenchée ;
+  - « **Ne pas ouvrir quand l'alarme est activée ET qu'une fenêtre est ouverte** » : même chose, mais seulement
+    pour un volet dont une fenêtre ou porte est ouverte (ou dont le capteur est indisponible).
+
+  Sans entité d'alarme, ou si elle est indisponible, rien n'est bloqué. La mise en sécurité contre le vent n'est
+  jamais bloquée par l'alarme. Les deux options sont désactivées par défaut.
+- **Seuils en entités** : les seuils de chaque scénario (Été : fermeture et réouverture, extérieur et pièce ;
+  Hiver : gain solaire extérieur et pièce) sont des entités `number` modifiables depuis vos tableaux de bord.
+- **Météo** : un ciel couvert peut neutraliser l'effet du soleil.
+
+### Modes de pilotage
+
+- **Automatique** : le moteur décide et envoie les ordres aux volets.
+- **Manuel** : aucun ordre n'est envoyé, vous pilotez vous-même ; les volets affichent « Mode manuel ».
+- **Arrêt** : aucune décision ni aucun ordre.
+
+La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décrit sous son sélecteur dans le panneau.
+
+### Plage active
+
+- **Plage horaire de gestion** : heure de début et heure de fin réglables. La fin peut être une **heure fixe**,
+  le **coucher du soleil avec un décalage** en minutes (avant ou après), ou **lue dans une entité** (`sensor`,
+  `input_datetime`, `input_text`).
+- Réglable depuis le panneau et depuis vos tableaux de bord (entités `time`, `select` et `number` de la plage).
+
+### Ouverture et fermeture horaires
+
+- **Ouverture du matin et fermeture du soir** de tous les volets, à **heure fixe** ou **selon le soleil** :
+  lever du soleil pour l'ouverture, coucher du soleil pour la fermeture, avec un **décalage de -60 à +60 minutes
+  par pas de 5**. Chaque moment (ouverture, fermeture) a son propre mode.
+- **Désactivable volet par volet** (cases « Ouverture du matin horaire » et « Fermeture du soir horaire » dans l'onglet Volets,
+  indépendantes l'une de l'autre, ou interrupteurs `switch.volets_<nom>_horaire_ouverture` et
+  `switch.volets_<nom>_horaire_fermeture`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
+- L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
+  position n'est pas touché.
+- **Blocages de l'ouverture activables** (section « Blocages » de l'onglet Horaires, chacun avec son interrupteur) :
+  l'**alarme** bloque l'ouverture ; l'**alarme et une fenêtre ouverte** bloquent l'ouverture. Décochés,
+  l'ouverture passe quand même. La **fermeture** est gérée volet par volet par le choix « Fermeture du soir si
+  une fenêtre est ouverte » (voir plus bas). Un ordre bloqué est retenté à chaque évaluation pendant 3 heures,
+  puis abandonné pour la journée.
+- Les horaires sont indépendants de la plage active, mais **coupés par le scénario « Désactivé »**. Ils sont
+  aussi ignorés quand le mode global est « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
+  prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
+  même après un redémarrage de Home Assistant. Les horaires sont autonomes : l'interrupteur `switch.volets_<nom>_auto` (protection
+  solaire) n'agit que sur la protection solaire, l'ouverture du matin et la fermeture du soir de chaque volet ont
+  chacune leur interrupteur et continuent de fonctionner même si la protection solaire est coupée. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
+  remonter un volet fermé à 100 % ».
+- **Gain solaire** : après la fermeture horaire du soir, un scénario de gain solaire (hiver) n'ouvre plus le volet
+  jusqu'à l'ouverture du matin. Si l'ouverture du matin est coupée pour ce volet (bouton O), le gain solaire n'est
+  bloqué que le reste du jour de la fermeture et reprend dès le lendemain : un volet peut ainsi s'ouvrir uniquement
+  grâce à la protection solaire (S), sans ouverture horaire.
+
+### Fermeture du soir si une fenêtre est ouverte
+
+Choix par volet (onglet Volets, section « Horaires d'ouverture et de fermeture »), qui ne concerne que la
+**fermeture automatique du soir** :
+
+- **Ne pas fermer** (par défaut) : le volet attend que la fenêtre soit fermée (fermeture retentée pendant 3 h).
+  Ce choix bloque toujours, quelle que soit la case « Ne pas fermer si une fenêtre est ouverte » de la section
+  « Fenêtres et portes », qui ne règle que la protection solaire.
+- **Fermer complètement** : le volet se ferme à l'heure prévue malgré la fenêtre.
+- **Presser un bouton** : le volet rejoint la position programmée du bouton (position favorite).
+- **Aller à une position (en %)** : le volet va à la position choisie (il ne remonte pas s'il est déjà plus bas).
+
+Avec « bouton » ou « position », le volet se **ferme complètement quand la fenêtre se referme**, au plus tard
+jusqu'à l'ouverture du lendemain. Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet. Un
+capteur indisponible ne referme pas le volet. Ces trois choix demandent au moins un capteur de fenêtre ; « bouton »
+demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenche rien.
+
+### Façades et soleil
+
+- **Quatre façades, orientation de la maison** : nord, est, sud, ouest par défaut (renommables,
+  supprimables, on peut en ajouter). Vous indiquez vers où regarde la façade que vous appelez « Sud » :
+  toutes les façades tournent avec elle. Chaque volet est affecté à la façade de votre choix.
+- **Soleil calculé selon le jour** : l'exposition de chaque façade est calculée avec la date, l'heure et
+  la position GPS de Home Assistant (azimut et hauteur du soleil), donc elle suit les saisons sans
+  aucun capteur. Réglages par façade : angle d'éclairage et hauteur minimale du soleil (arbres,
+  voisins). Vous pouvez aussi utiliser un capteur existant (par exemple `binary_sensor.volets_exposition_*`).
+- **Plages d'ensoleillement toute la journée** : les capteurs de façade (`sensor.volets_facade_*_debut/fin`)
+  gardent leur valeur toute la journée (plage en cours, sinon la prochaine, sinon la dernière du jour), que la
+  façade soit exposée ou non.
+
+### Pilotage de chaque volet
+
+- **Boutons S / O / F par volet** : dans le tableau de bord du panneau (comme sur la carte), trois boutons activent ou coupent séparément la **protection solaire** (S, équivalent de `switch.volets_*_auto`), l'**ouverture horaire du matin** (O, `switch.volets_*_horaire_ouverture`) et la **fermeture horaire du soir** (F, `switch.volets_*_horaire_fermeture`). Le mode global et le scénario se choisissent dans deux listes déroulantes.
+- **Position voulue par volet** : chaque volet a sa propre position de protection (pourcentage,
+  bouton « position favorite » ou fermeture complète).
+- **Pause automatique après action manuelle** : si vous bougez un volet à la main, il est laissé
+  tranquille pendant la durée choisie (ou jusqu'à la fin de la plage active). Le statut « En pause » est
+  distinct d'un volet dont la gestion est désactivée.
+- **Fenêtre ou porte ouverte** : la fermeture est bloquée (utile pour les portes-fenêtres). Un capteur de
+  fenêtre indisponible compte comme « ouvert » : on ne prend pas le risque d'enfermer quelqu'un dehors.
+- **Vent** (stores et bannes) : mise en sécurité automatique au-delà d'un seuil, avec hystérésis. Elle est
+  prioritaire sur le mode (même « manuel » ou « arrêté »), le scénario, la pause et le délai de démarrage ;
+  seul un volet dont la gestion automatique est désactivée y échappe. Pour chaque volet, choisissez l'ordre
+  qui le met en sécurité : « ouvrir » (volet roulant remonté) ou « fermer » (store ou banne rentré).
+- **Volet fermé à 100 %, jamais remonté** : un volet fermé à 100 % n'est pas remonté par l'intégration, quelle que
+  soit la façon dont il a été fermé (à la main, par une autre automatisation, par l'intégration elle-même). Option par
+  volet pour lever cette règle dans le ou les scénarios de votre choix (Été, Hiver, Vacances). Seule exception : un
+  volet dont la protection est la fermeture totale (méthode « fermer » ou position 0 %) et que l'intégration a fermé
+  est remonté, sinon sa protection ne se terminerait jamais. « Fermé à 100 % » veut dire position 0 % rapportée par le
+  volet, ou état « fermé » pour un volet sans position. La règle vaut aussi pour la protection contre le vent
+  (un volet fermé est déjà à l'abri).
+
+### Sécurités et transparence
+
+- **Sécurités** : délai après redémarrage, aucune action si la température extérieure ou le capteur
+  d'exposition est indisponible.
+- **Transparence** : chaque volet affiche en français pourquoi il est dans son état.
+
+### Panneau et tableaux de bord
+
+- **Panneau de gestion** (« Interface de gestion » depuis la fenêtre Configurer) : sept onglets, voir plus bas.
+- **Entités pour vos tableaux de bord** : mode, scénario, seuils, plage active, façades, et un interrupteur
+  « Auto » et un statut par volet. L'onglet « Entités » du panneau liste les identifiants réels, avec des
+  exemples prêts à copier.
+
+## Installation
+
+Bouton d'installation rapide (nécessite d'avoir configuré [My Home Assistant](https://my.home-assistant.io)) :
+
+[![Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=volets_intelligents&category=integration)
+
+1. HACS > Intégrations : recherchez « Volets Intelligents » (l'intégration est dans le catalogue par défaut de HACS) et téléchargez-la.
+2. Redémarrez Home Assistant.
+3. Paramètres > Appareils et services > Ajouter une intégration > Volets Intelligents.
+4. Ouvrez le panneau **Volets** dans la barre latérale et configurez.
+
+Si la recherche ne la trouve pas (HACS pas encore à jour, par exemple), ajoutez-la comme dépôt personnalisé : HACS > Intégrations > menu ⋮ > Dépôts personnalisés, collez l'adresse de ce dépôt (catégorie Intégration), puis reprenez à l'étape 1.
+
+Version minimale de Home Assistant : 2026.3.0. Le panneau et la carte sont disponibles en français et en anglais.
+
+### Accéder au panneau, masquer le menu latéral
+
+Dans Paramètres > Appareils et services > Volets Intelligents > **Configurer**, la case « Afficher “Volets” dans le menu
+latéral » permet de retirer l'entrée du menu. Le panneau reste accessible à l'adresse `/volets-intelligents` (lien
+fourni dans cette même fenêtre) et par le bouton **Visiter** de la page de l'appareil « Volets Intelligents ». La carte
+Lovelace n'est pas concernée. Le changement recharge l'intégration (quelques secondes).
+
+### Donner accès au panneau à d'autres personnes
+
+Dans la même fenêtre **Configurer**, le champ « Personnes désignées (accès complet au panneau) » permet de choisir des
+comptes Home Assistant non administrateurs. Ces personnes ont accès à **tous les onglets** du panneau (volets,
+façades, scénarios, entités, réglages) et peuvent tout modifier, comme un administrateur ; l'accès est contrôlé côté
+serveur. Les autres comptes non administrateurs ne voient que l'onglet Tableau de bord. Champ vide par défaut
+(administrateurs seulement). Une fois au moins une personne désignée, l'entrée « Volets » apparaît dans le menu de
+tous les comptes (menu masquable avec la case ci-dessus).
+
+### Icône dans la liste des mises à jour de HACS
+
+L'intégration fournit son icône et son logo (dossier `brand/`), que Home Assistant 2026.3 et plus affichent sur la page de
+l'intégration. HACS 2.0.5, lui, va chercher l'icône sur l'ancien serveur de logos de Home Assistant (qui n'a rien pour une
+intégration personnalisée) : « icon not available » s'affiche dans la liste des mises à jour tant que HACS n'est pas corrigé
+([hacs/integration#5171](https://github.com/hacs/integration/issues/5171)). En attendant, vous pouvez forcer l'image dans
+`configuration.yaml` (puis Outils de développement > YAML > Recharger la personnalisation, ou redémarrer) :
+
+```yaml
+homeassistant:
+  customize:
+    update.volets_intelligents_update:
+      entity_picture: /volets_intelligents_static/icon.png
+```
+
+L'identifiant `update.volets_intelligents_update` est celui créé par HACS ; vérifiez-le dans Paramètres > Entités si
+besoin. La liste des dépôts dans le panneau HACS lui-même garde son image par défaut.
+
+### Premiers pas
+
+1. **Orientation de la maison** (Réglages) : vers quel azimut regarde votre façade « Sud » ? 180 si votre
+   maison est alignée sur les points cardinaux, 135 si la façade principale regarde le sud-est.
+   Les coordonnées GPS viennent de la configuration de Home Assistant (Paramètres > Système > Général).
+2. **Température extérieure** (Réglages) : un capteur de température, et éventuellement la température ressentie.
+3. **Volets** : ajoutez vos volets (ajout groupé possible) et choisissez la façade de chacun.
+
+## Configuration dans le panneau
+
+| Onglet | Contenu |
+|---|---|
+| Tableau de bord | Mode global, scénario, températures, plage active, état de chaque volet, pause et reprise. |
+| Volets | Liste des volets, tout ce qui est propre à un volet : façade, position de protection, méthode, température de la pièce, fenêtres, horaires (suivre ou non, fermeture du soir si une fenêtre est ouverte), vent. |
+| Façades | Orientation, angle d'éclairage, masque d'horizon, plages d'ensoleillement du jour. |
+| Protection solaire | Seuils et conditions de chaque scénario, options d'alarme, scénario automatique selon les mois, plage active. |
+| Horaires | Ouverture du matin et fermeture du soir de tous les volets (heure fixe ou soleil, décalage), blocages de l'ouverture par l'alarme. |
+| Réglages | Orientation de la maison, capteurs extérieurs et alarme, vent, météo, pause manuelle, import et export JSON. |
+| Entités | Identifiants réels des entités de l'intégration, exemples YAML prêts à copier, valeurs des modes et scénarios. |
+
+Les captures ci-dessous utilisent des données de démonstration.
+
+### Tableau de bord
+
+![Tableau de bord](docs/screenshots/tableau-de-bord.png)
+
+### Protection solaire
+
+![Protection solaire](docs/screenshots/scenarios.png)
+
+### Volets
+
+![Volets](docs/screenshots/volets.png)
+
+### Façades
+
+![Façades](docs/screenshots/facades.png)
+
+### Horaires
+
+![Horaires](docs/screenshots/horaires.png)
+
+### Réglages
+
+![Réglages](docs/screenshots/reglages.png)
+
+### Entités
+
+![Entités](docs/screenshots/entites.png)
+
+### Comment le soleil est calculé
+
+L'azimut d'une façade est sa direction cardinale (nord 0°, est 90°, sud 180°, ouest 270°) décalée de
+« orientation de la maison − 180 ». Une façade « personnalisée » (lucarne, pan de toit) a son propre azimut.
+Elle est éclairée quand le soleil est au-dessus de la hauteur minimale ET à moins de l'angle d'éclairage
+(80° par défaut) de la perpendiculaire à la façade. Il s'agit d'une géométrie simple : elle ne connaît ni
+les débords de toit ni les obstacles, que l'on compense avec la hauteur minimale ou un capteur d'exposition.
+
+### Règles de la protection thermique
+
+Un volet **non protégé** se ferme si : la façade est exposée ET (température extérieure effective
+> seuil de fermeture extérieur OU température de la pièce > seuil de fermeture pièce).
+La température extérieure effective est le maximum entre la mesure et la température ressentie.
+
+Un volet **protégé par l'intégration** remonte si la façade n'est plus exposée, ou selon le mode de relâche :
+
+- `all` (recommandé) : extérieur sous le seuil d'ouverture ET pièce sous le seuil d'ouverture. Évite
+  que la pièce, refroidie par le volet fermé, le fasse rouvrir en plein soleil.
+- `any` : comportement de l'ancienne automatisation, un seul des deux suffit (extérieur OU pièce).
+- `room` : seule la pièce compte (sous son seuil d'ouverture).
+- `outdoor` : seul l'extérieur compte (sous son seuil d'ouverture).
+
+À la fin de la plage active, les volets encore protégés remontent.
+
+## Entités pour vos tableaux de bord
+
+L'intégration crée un appareil « Volets Intelligents » qui regroupe toutes ses entités. Les identifiants
+ci-dessous sont les identifiants **habituels** : Home Assistant les construit à partir du nom du volet au
+moment de sa création. Vérifiez les vôtres dans Paramètres > Appareils et services > Volets Intelligents
+(ou en cherchant « volets » dans Paramètres > Entités). Dans les exemples, `bureau` est à remplacer par le
+nom de votre volet.
+
+### Entités globales
+
+| Entité | Type | Valeurs | Usage |
+|---|---|---|---|
+| `select.volets_mode` | select | `auto`, `manual`, `off` (affichés Automatique, Manuel, Arrêté) | Mode global. **Automatique** : le moteur décide et envoie les ordres. **Manuel** : aucun ordre envoyé (les volets affichent « Mode manuel »). **Arrêté** : aucune décision ni ordre (la sécurité vent reste prioritaire). Modifiable depuis un tableau de bord. |
+| `select.volets_scenario` | select | Nom de chaque scénario (par défaut Été, Hiver, Vacances, Désactivé ; suit le champ « Libellé ») | Scénario actif. `select_option` accepte aussi les clés `summer`, `winter`, `vacation`, `off`. Modifiable, sauf quand le scénario automatique selon le mois est activé. |
+| `sensor.volets_temperature_exterieure_effective` | sensor (°C) | nombre, ou indisponible | Température extérieure réellement utilisée par les règles (maximum entre la mesure et la température ressentie si l'option est activée). |
+
+### Plage active
+
+| Entité | Type | Usage |
+|---|---|---|
+| `binary_sensor.volets_plage_active` | binary_sensor | `on` quand l'heure courante est dans la plage active. |
+| `sensor.volets_plage_debut` | sensor (horodatage) | Début de la plage active du moment. |
+| `sensor.volets_plage_fin` | sensor (horodatage) | Fin de la plage active du moment (vide si la fin est indisponible). |
+| `time.volets_reglage_plage_debut` | time | **Réglage** de l'heure de début. Modifiable depuis un tableau de bord. |
+| `time.volets_reglage_plage_fin` | time | **Réglage** de l'heure de fin fixe (aussi utilisée en repli si l'entité de fin est indisponible). |
+| `select.volets_reglage_plage_mode_fin` | select | **Réglage** du mode de fin : `fixed` (heure fixe), `entity` (lue dans une entité), `sunset` (coucher du soleil). Le mode `entity` demande qu'une entité de fin soit déjà choisie dans le panneau, sinon le changement est refusé. |
+| `number.volets_reglage_plage_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -240 à 240, utile en mode `sunset`). |
+
+### Ouverture et fermeture horaires
+
+| Entité | Type | Usage |
+|---|---|---|
+| `switch.volets_horaires` | switch | **Réglage** : active les ouvertures et fermetures horaires de tous les volets. |
+| `select.volets_horaire_ouverture_mode` | select | **Réglage** du mode d'ouverture : `fixed` (heure fixe) ou `sun` (lever du soleil). |
+| `time.volets_horaire_ouverture_heure` | time | **Réglage** de l'heure d'ouverture fixe (aussi utilisée en repli si l'heure du soleil est indisponible). |
+| `number.volets_horaire_ouverture_decalage_lever` | number (min) | **Réglage** du décalage par rapport au lever du soleil (de -60 à 60, par pas de 5, utile en mode `sun`). |
+| `sensor.volets_ouverture_prevue` | sensor (horodatage) | Heure d'ouverture du jour (vide si les horaires sont désactivés). |
+| `select.volets_horaire_fermeture_mode` | select | **Réglage** du mode de fermeture : `fixed` ou `sun` (coucher du soleil). |
+| `time.volets_horaire_fermeture_heure` | time | **Réglage** de l'heure de fermeture fixe (repli compris). |
+| `number.volets_horaire_fermeture_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -60 à 60, par pas de 5). |
+| `sensor.volets_fermeture_prevue` | sensor (horodatage) | Heure de fermeture du jour (vide si les horaires sont désactivés). |
+| `switch.volets_horaire_alarme_bloque_ouverture` | switch | **Réglage** : l'alarme activée bloque l'ouverture horaire. |
+| `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture` | switch | **Réglage** : l'alarme activée et une fenêtre ouverte bloquent l'ouverture horaire. |
+
+### Seuils des scénarios
+
+| Entité | Type | Usage |
+|---|---|---|
+| `number.volets_seuil_ete_fermeture_exterieur` | number (°C) | **Réglage** : l'été, fermeture quand l'extérieur atteint ce seuil. |
+| `number.volets_seuil_ete_fermeture_piece` | number (°C) | **Réglage** : l'été, fermeture quand la pièce atteint ce seuil. |
+| `number.volets_seuil_ete_reouverture_exterieur` | number (°C) | **Réglage** : l'été, réouverture sous ce seuil extérieur. |
+| `number.volets_seuil_ete_reouverture_piece` | number (°C) | **Réglage** : l'été, réouverture sous ce seuil pièce. |
+| `number.volets_seuil_hiver_gain_exterieur` | number (°C) | **Réglage** : l'hiver, gain solaire quand l'extérieur est sous ce seuil. |
+| `number.volets_seuil_hiver_gain_piece` | number (°C) | **Réglage** : l'hiver, gain solaire quand la pièce est sous ce seuil. |
+
+Ils modifient le scénario correspondant ; les scénarios « vacances » et « désactivé » n'ont pas de seuils.
+
+L'entité qui fournit la fin de plage (par exemple `sensor.volets_heure_remontee`) se choisit dans le panneau
+(onglet Protection solaire). Chaque modification faite par ces entités est enregistrée comme si elle venait du panneau.
+
+### Façades : exposition et horaires
+
+Une série d'entités par façade (Nord, Est, Sud, Ouest et vos façades ajoutées) :
+
+| Entité | Type | Usage |
+|---|---|---|
+| `binary_sensor.volets_facade_<nom>_exposee` | binary_sensor | `on` quand la façade reçoit le soleil (météo comprise), `off` sinon, inconnu si le capteur d'exposition est indisponible. Attributs : `facade`, `orientation`, `azimuth`, `source` (`sun` ou `entity`), `windows` (toutes les plages d'ensoleillement théoriques du jour). |
+| `sensor.volets_facade_<nom>_debut` | sensor (horodatage) | Début de la plage d'ensoleillement en cours, sinon de la prochaine, sinon de la dernière du jour. Vide si la façade n'est jamais exposée ce jour-là, ou en mode « capteur existant ». |
+| `sensor.volets_facade_<nom>_fin` | sensor (horodatage) | Fin de cette même plage. |
+
+Ces entités portent des noms différents de vos éventuels capteurs `binary_sensor.volets_exposition_*` : il n'y a
+aucun conflit. Les horaires sont des horaires théoriques (géométrie du soleil, sans météo ni obstacle) et se
+rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
+
+### Entités par volet
+
+| Entité | Type | Description |
+|---|---|---|
+| `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
+| `select.volets_<nom>_horaire_fenetre` | select | **Réglage** : fermeture du soir si une fenêtre est ouverte : `block` (ne pas fermer), `close` (fermer complètement), `button` (presser le bouton de position programmée), `position` (aller à la position choisie). Avec `button` et `position`, le volet se ferme complètement quand la fenêtre se referme. |
+| `number.volets_<nom>_horaire_fenetre_position` | number (%) | **Réglage** : position atteinte avec le choix `position` (0 % = fermé). |
+| `switch.volets_<nom>_horaire_ouverture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de l'**ouverture du matin** horaire. |
+| `switch.volets_<nom>_horaire_fermeture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de la **fermeture du soir** horaire. Désactivée, le choix « Fermeture du soir si une fenêtre est ouverte » et le blocage du gain solaire après la fermeture ne s'appliquent plus à ce volet. |
+| `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
+
+Valeurs du statut (`sensor.volets_<nom>_statut`) :
+
+| Valeur | Affichage | Sens |
+|---|---|---|
+| `shaded` | Protégé du soleil | Le volet a été abaissé par l'intégration. |
+| `watching` | Surveillance | Rien à faire pour le moment. |
+| `paused` | En pause | Action manuelle détectée, ou pause demandée. |
+| `schedule` | Horaire | Ouverture ou fermeture horaire en cours (ou en attente : alarme). |
+| `window_open` | Fenêtre ouverte | Fermeture bloquée, volet en position programmée pendant que la fenêtre est ouverte (ou capteur de fenêtre indisponible). |
+| `wind_protected` | Protégé du vent | Mis en sécurité à cause du vent. |
+| `cooldown` | Anti-usure | Attente de l'intervalle minimal entre deux mouvements. |
+| `outside_window` | Hors plage | En dehors de la plage active. |
+| `grace` | Démarrage | Délai de sécurité après un redémarrage. |
+| `no_data` | Données manquantes | Température extérieure ou exposition indisponible : aucune action. |
+| `mode_manual` | Mode manuel | Le mode global est « manuel ». |
+| `mode_off` | Arrêté | Le mode global est « arrêté ». |
+| `scenario_off` | Scénario désactivé | Le scénario actif ne commande aucun volet (horaires compris). |
+| `disabled` | Désactivé | Protection solaire coupée pour ce volet (interrupteur sur `off`) ; les horaires restent actifs s'ils sont cochés. |
+| `unavailable` | Indisponible | L'entité volet est indisponible. |
+
+Attributs de `sensor.volets_<nom>_statut` :
+
+| Attribut | Contenu |
+|---|---|
+| `reason` | Phrase en français qui explique la situation (par exemple « Soleil sur la façade Est et 27,4 °C dehors »). |
+| `cover` | Entité du volet piloté (par exemple `cover.calyps_home_volet_bureau`). |
+| `position` | Position actuelle en pourcentage, ou vide si le volet n'en rapporte pas. |
+| `room_temp` | Température de la pièce utilisée, ou vide. |
+| `exposed` | `true` si la façade reçoit le soleil (météo comprise), `false` sinon, vide si l'information est indisponible. |
+| `paused_until` | Date et heure de fin de pause, ou vide. |
+| `shaded_by_us` | `true` si l'intégration a abaissé le volet. |
+| `last_action` | Dernière action de l'intégration : `close` ou `open`. |
+| `last_action_at` | Date et heure de cette action. |
+| `window_state` | État des capteurs d'ouverture du volet : `open`, `closed`, `unknown` (capteur indisponible), vide si aucun capteur. Une seule fenêtre ouverte suffit pour `open`. |
+
+Les entités d'un volet apparaissent ou disparaissent quand vous ajoutez ou retirez le volet dans le panneau.
+
+**Onglet « Entités » du panneau.** Il liste les identifiants réels des entités de votre installation (lus dans
+Home Assistant, donc exacts même si vous les avez renommées), avec un bouton « Copier » par identifiant, la
+liste des valeurs possibles et des exemples de cartes YAML déjà remplis avec vos identifiants.
+
+### Exemples prêts à copier
+
+Pilotage global (à adapter si vos identifiants diffèrent) :
+
+```yaml
+type: entities
+title: Volets intelligents
+entities:
+  - entity: select.volets_mode
+    name: Mode
+  - entity: select.volets_scenario
+    name: Scénario
+  - entity: sensor.volets_temperature_exterieure_effective
+    name: Température extérieure utilisée
+```
+
+Un volet avec son interrupteur, son statut et l'explication :
+
+```yaml
+type: entities
+title: Bureau
+entities:
+  - entity: cover.calyps_home_volet_bureau
+  - entity: switch.volets_bureau_auto
+    name: Gestion automatique
+  - entity: sensor.volets_bureau_statut
+    name: Statut
+  - type: attribute
+    entity: sensor.volets_bureau_statut
+    attribute: reason
+    name: Pourquoi
+```
+
+Explication de plusieurs volets dans une carte Markdown :
+
+```yaml
+type: markdown
+title: Volets, pourquoi ?
+content: >
+  **Bureau** : {{ state_attr('sensor.volets_bureau_statut', 'reason') }}
+
+  **Salon** : {{ state_attr('sensor.volets_salon_statut', 'reason') }}
+```
+
+Compter les volets actuellement abaissés par l'intégration (un modèle prêt à coller dans une carte Markdown ou
+dans un capteur modèle) :
+
+```yaml
+{{ states.sensor
+   | selectattr('attributes.volets_intelligents', 'defined')
+   | selectattr('state', 'eq', 'shaded')
+   | list | count }}
+```
+
+Tous les capteurs de statut portent l'attribut `volets_intelligents: true`, ce qui permet de les retrouver
+sans lister leurs noms, par exemple avec la carte `auto-entities` :
+
+```yaml
+type: custom:auto-entities
+card:
+  type: entities
+  title: Statut des volets
+filter:
+  include:
+    - domain: sensor
+      attributes:
+        volets_intelligents: true
+```
+
+### Services
+
+| Service | Champs | Effet |
+|---|---|---|
+| `volets_intelligents.pause` | `entity_id` (volets, tous si vide), `minutes` (durée des réglages si vide) | Met des volets en pause. |
+| `volets_intelligents.resume` | `entity_id` (tous si vide) | Reprend la gestion automatique. |
+| `volets_intelligents.evaluate` | aucun | Force une évaluation immédiate. |
+
+```yaml
+type: button
+name: Pause 2 h, salon
+tap_action:
+  action: perform-action
+  perform_action: volets_intelligents.pause
+  data:
+    entity_id: cover.calyps_home_volet_canape
+    minutes: 120
+```
+
+## Carte Lovelace
+
+La carte est chargée automatiquement : l'intégration la déclare comme ressource Lovelace (mode stockage ; en mode YAML, ajoutez la ressource `/volets_intelligents_static/volets-card.js` de type module). Ajoutez-la depuis l'éditeur de tableau de bord
+(« Volets Intelligents ») ou en YAML :
+
+```yaml
+type: custom:volets-intelligents-card
+title: Volets
+```
+
+La carte permet de choisir le mode et le scénario (deux listes déroulantes côte à côte), et affiche les volets
+**regroupés par façade**. Le bandeau de chaque façade donne sa plage d'exposition du jour et signale la façade
+actuellement au soleil. En été, un volet protégé du soleil indique l'heure à laquelle il remonte au plus tard (fin de
+l'exposition de sa façade). Un clic sur le nom d'un volet ouvre la fenêtre de contrôle de son entité.
+
+Chaque volet porte trois interrupteurs : **S** (protection solaire), **O** (ouverture horaire) et **F** (fermeture
+horaire). Un bouton vert est activé, un bouton gris est désactivé ; ils agissent comme les interrupteurs
+`switch.volets_*_auto`, `switch.volets_*_horaire_ouverture` et `switch.volets_*_horaire_fermeture`.
+
+Options de la carte (toutes facultatives, réglables dans l'éditeur visuel de la carte) :
+
+```yaml
+type: custom:volets-intelligents-card
+title: Volets
+show_solar: true     # interrupteur S (protection solaire) ; false = masqué
+show_open: true      # interrupteur O (ouverture horaire) ; false = masqué
+show_close: false    # interrupteur F (fermeture horaire) ; false = masqué
+order:               # ordre des volets (les volets non listés viennent après)
+  - cover.calyps_home_volet_du_bar
+  - cover.calyps_home_volet_canape
+scenarios:           # scénarios proposés (vide ou absent = tous)
+  - summer
+  - winter
+```
+
+L'éditeur visuel permet aussi de réordonner les volets avec les boutons ▲ ▼. Les façades suivent l'ordre choisi :
+celle dont le premier volet vient en tête passe en premier.
+
+![Carte Lovelace](docs/screenshots/carte-facades.png)
+
+La case **Façades repliables**, en bas de la carte, permet de replier ou déplier les volets d'une façade d'un clic
+sur son bandeau. Le choix est mémorisé dans le navigateur (propre à chaque appareil).
+
+![Carte Lovelace, façades repliées](docs/screenshots/carte-facades-repliees.png)
+
+![Carte Lovelace, une façade dépliée](docs/screenshots/carte-facades-repliables.png)
+
+![Éditeur visuel de la carte](docs/screenshots/carte-editeur.png)
+
+Les captures utilisent des données de démonstration.
+
+## Droits des utilisateurs
+
+Les droits suivent ceux de Home Assistant : le panneau de gestion est réservé aux administrateurs. La
+carte Lovelace est visible de tous, mais changer le mode ou le scénario, mettre en pause ou reprendre
+un volet demande le droit de contrôle sur l'entité correspondante (`select.volets_mode`,
+`select.volets_scenario`, le volet lui-même), comme pour n'importe quel appel de service.
+
+## Plage active
+
+La plage active va d'une heure de début à une heure de fin (fixe, lue dans une entité, ou relative
+au coucher du soleil). Si la fin est avant le début, la plage passe minuit (ex. 20:00 → 02:00).
+Si l'entité de fin est indisponible, l'heure de fin fixe sert de repli.
+
+## Inspirations et différences
+
+Le projet reprend la logique de l'automatisation « VOLETS : Thermique » de son auteur (exposition
+prévue par orientation, températures par pièce, seuils, plage jusqu'à l'heure de remontée) et
+s'inspire des idées du projet [CoverAutomatic](https://github.com/crandler/CoverAutomatic)
+(hystérésis, pause après action manuelle, fenêtre ouverte, vent, délai de démarrage, scénarios).
+Aucun code n'a été copié.
+
+## Limites connues
+
+- Les statuts `shaded` et les pauses se basent sur la position rapportée par le volet. Un volet
+  qui ne rapporte aucune position est géré en tout ou rien.
+- Avec le mode « bouton » (position favorite), la position atteinte peut différer de la position de
+  protection réglée : l'intégration reconnaît quand même un volet qu'elle a abaissé et le remonte ensuite.
+- Si l'intégration abaisse un volet à 10 % et que vous le fermez ensuite complètement, elle l'abandonne : il reste fermé.
+- Un mouvement venant d'une autre automatisation (alarme, fermeture du soir) pendant la plage active
+  est traité comme une action manuelle et met le volet en pause.
+
+## Développement
+
+```bash
+pip install ruff
+ruff check .
+```
+
+Le moteur de décision (`engine.py`) et la validation (`schema.py`) n'importent pas Home Assistant
+et peuvent être importés seuls. Le frontend (`frontend/`) est en JavaScript pur, sans étape de build.
+Le contrat de données entre frontend et backend est décrit dans `docs/API.md`.
+
+Les plages d'ensoleillement affichées sont théoriques (géométrie seule, sans météo).
+
+Licence MIT.
