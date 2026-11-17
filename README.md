@@ -1,589 +1,312 @@
-# Volets Intelligents
+# Protocole Alarme
 
-[![release](https://img.shields.io/github/v/release/akoonet-homeassistant/volets_intelligents?label=release&color=blue)](https://github.com/akoonet-homeassistant/volets_intelligents/releases)
-[![license](https://img.shields.io/github/license/akoonet-homeassistant/volets_intelligents?color=green)](LICENSE)
-[![HACS](https://img.shields.io/badge/HACS-Default-41BDF5)](https://hacs.xyz)
+<img src="custom_components/protocole_alarme/brand/logo.png" alt="Protocole Alarme" width="300">
 
-**Français** · [English](README.en.md)
+🇫🇷 [Français](#français) · 🇬🇧 [English](#english)
 
-Intégration Home Assistant (HACS) qui protège la maison de la chaleur en pilotant les volets
-selon le soleil, les températures et l'activité des habitants, avec un **panneau de gestion
-graphique** et une **carte Lovelace**. Aucun YAML à écrire.
+[![Release](https://img.shields.io/github/v/release/akoonet-homeassistant/protocole_alarme)](https://github.com/akoonet-homeassistant/protocole_alarme/releases)
+[![License](https://img.shields.io/github/license/akoonet-homeassistant/protocole_alarme)](LICENSE)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
 
-> ⚠️ **Avertissement**
->
-> Installation et utilisation à vos propres risques. Ce projet est fourni « tel quel », sans aucune garantie de fonctionnement, de fiabilité ou d'adéquation à un usage particulier — y compris concernant le pilotage réel de vos volets. Aucune garantie n'est non plus assurée sur les modifications de code éventuellement apportées (par vous-même ou par des tiers).
+![Protocole Alarme](docs/screenshots/regles.png)
 
-## Ce que fait l'intégration
+## Français
 
-### Protection et scénarios
+Protocole Alarme lance des actions quand vous **armez** ou **désarmez** votre alarme Home Assistant. Vous choisissez entité par entité ce qui doit se passer, sans écrire d'automatisation :
 
-- **Protection thermique (scénario Été)** : un volet s'abaisse à la position voulue quand sa façade
-  reçoit le soleil ET qu'il fait chaud dehors ou dans la pièce. Il remonte quand le soleil quitte
-  la façade ou que les températures sont redescendues.
-- **Hystérésis** : seuils de fermeture et de réouverture distincts (extérieur et pièce), plus un intervalle
-  minimal entre deux mouvements (anti-usure).
-- **Condition de réouverture (Été)** : le volet protégé se rouvre quand **pièce ET extérieur** sont redescendus sous
-  leurs seuils (recommandé), quand **pièce OU extérieur** l'est, ou selon **la pièce seulement** ou **l'extérieur
-  seulement** (l'autre seuil est alors ignoré).
-- **Quatre scénarios** : **Été** (protège de la chaleur), **Hiver** (gain solaire : rouvre un volet fermé et
-  ensoleillé quand il fait frais, ne ferme jamais), **Vacances** (ferme dès qu'une façade est exposée, sans
-  condition de température) et **Désactivé** (aucune action liée au soleil). Choix manuel, ou automatique selon
-  le mois. Chaque scénario est décrit sous son sélecteur dans le panneau.
-- **Condition d'ouverture (Hiver)** : au choix, la **pièce ET l'extérieur** sous leurs seuils (par défaut), la
-  la **pièce OU l'extérieur** (un seul suffit), la **pièce seulement** ou l'**extérieur seulement** (l'autre seuil
-  est alors ignoré). Une **limite extérieure basse** optionnelle (négative possible) empêche d'ouvrir le volet quand
-  l'extérieur est à cette température ou en dessous. Réglages dans l'onglet Protection solaire.
-- **Alarme** : choisissez une entité `alarm_control_panel` (Réglages). Chaque scénario d'action (Été, Hiver,
-  Vacances) propose deux options, indépendantes :
-  - « **Ne pas ouvrir quand l'alarme est activée** » : aucune ouverture automatique tant que l'alarme est armée
-    (états `armed_*`) ou déclenchée ;
-  - « **Ne pas ouvrir quand l'alarme est activée ET qu'une fenêtre est ouverte** » : même chose, mais seulement
-    pour un volet dont une fenêtre ou porte est ouverte (ou dont le capteur est indisponible).
+- si une fenêtre est ouverte, fermer le volet de la pièce ;
+- si la porte du garage est ouverte, envoyer une impulsion au moteur, puis vérifier qu'elle s'est bien fermée ;
+- allumer une lumière, passer le chauffage en éco, démarrer le simulateur de présence ;
+- au désarmement, arrêter le simulateur, allumer l'entrée, envoyer une notification…
 
-  Sans entité d'alarme, ou si elle est indisponible, rien n'est bloqué. La mise en sécurité contre le vent n'est
-  jamais bloquée par l'alarme. Les deux options sont désactivées par défaut.
-- **Seuils en entités** : les seuils de chaque scénario (Été : fermeture et réouverture, extérieur et pièce ;
-  Hiver : gain solaire extérieur et pièce) sont des entités `number` modifiables depuis vos tableaux de bord.
-- **Météo** : un ciel couvert peut neutraliser l'effet du soleil.
+### Fonctionnalités
 
-### Modes de pilotage
+- **Assistant en 3 étapes** : *Quand* (armement ou désarmement, modes d'alarme), *Si* (conditions facultatives sur l'état d'entités), *Alors* (actions), puis un récapitulatif lisible.
+- **Actions paramétrables selon le type d'entité** : volets (ouvrir, fermer, position), lumières (allumer avec luminosité, éteindre), interrupteurs (allumer, éteindre, **impulsion** de durée réglable), serrures, chauffage (préréglage, température), médias, scènes, scripts, automatisations, listes, vannes, boutons et notifications.
+- **Vérification du résultat** : après un délai, contrôle qu'une entité est dans l'état attendu (ex. volet fermé) ; sinon lance **une ou plusieurs actions en cas d'échec** (prévenir, déclencher l'alarme, allumer une lumière…) et active le capteur « Échec de vérification ». Pas de nouvel essai automatique.
+- **Notifications** : une action comme une autre, vers un ou plusieurs destinataires — téléphones, Home Assistant et **entités de notification** comme Telegram (envoyées par `notify.send_message`).
+- **Messages avec variables** : `{{ regle }}` et `{{ entite }}` (l'entité qui a déclenché la règle) dans toutes les notifications ; en cas d'échec, `{{ entite }}` est l'entité vérifiée et `{{ etat_actuel }}`, `{{ etat_attendu }}` sont disponibles. Un aperçu montre le message rempli ; les états reprennent les libellés de Home Assistant.
+- **Personnes autorisées** : en plus des administrateurs, d'autres utilisateurs peuvent être autorisés à modifier les règles (onglet Réglages).
+- **Choix d'entité lisible** : recherche, filtres par type, et pour chaque entité son type (Fenêtre, Porte de garage, Mouvement…), son état et son icône.
+- **Surveillance pendant l'armement** (option) : si la condition d'une règle d'armement devient vraie alors que l'alarme est déjà armée (ex. une fenêtre s'ouvre), la règle s'exécute aussi. Un retour d'« indisponible » ne déclenche rien.
+- **Ne rien faire pendant… après l'armement** (surveillance) : la surveillance ne commence qu'après ce délai (0 à 600 s), le temps que les autres règles ferment les volets.
+- **Ignorer si c'est déjà le cas à l'armement** (surveillance) : une fenêtre restée ouverte au moment de l'armement est tolérée jusqu'au désarmement ; seules les nouvelles ouvertures comptent. Évite le conflit avec une règle qui ferme le volet d'une fenêtre ouverte.
+- **Tolérer seulement si…** : la tolérance ne vaut que si une autre entité est dans un état donné (ex. le volet de la pièce est fermé). Si le volet se rouvre, ou si la fenêtre se rouvre volet ouvert, la règle s'exécute.
+- **Règles classées par type** : Volets et fenêtres, Intrusion, Portes et garage, Lumières et simulation, Chauffage, Notifications, Autres. Le type est proposé d'après les actions et se change dans le récapitulatif.
+- **Déclencher l'alarme** : action qui déclenche l'alarme suivie (intrusion).
+- **Notification critique** : sur l'application mobile Home Assistant, sonne même en mode silencieux / Ne pas déranger.
+- **Mise à jour automatique** des règles des versions précédentes : la liste « Prévenir » de la vérification devient une action de notification, avec le même message.
+- **Remettre l'état au désarmement** (règles d'armement) : l'état des entités choisies est mémorisé juste avant que la règle agisse, puis remis au désarmement — avec la luminosité et la couleur d'une lumière, la position d'un volet, le mode et la consigne d'un thermostat. La liste se remplit avec les entités pilotées par la règle et se modifie à la main ; la mémoire survit à un redémarrage de Home Assistant et s'affiche dans la liste des règles. La remise en état passe avant les règles de désarmement, qui gardent le dernier mot.
+- **Délai avant exécution** par règle.
+- **Annulation** : désarmer l'alarme interrompt les règles d'armement encore en cours (délai, impulsion, vérification), et inversement.
+- **Redémarrage de Home Assistant** : ne déclenche aucune règle.
+- **Simulateur de présence** : pilote [Lights Simulator](https://github.com/akoonet-homeassistant/lights_simulator) (Démarrer, Repasser en Auto, Arrêter). S'il n'est pas installé, le panneau propose de l'installer par HACS ; s'il suit déjà l'alarme lui-même, un avertissement signale le double pilotage.
+- **Modèles** pour démarrer en deux clics (garage, volet, simulateur, lumière, notification, **déclencher l'alarme si une fenêtre s'ouvre**).
+- **Mode avancé** : une règle peut être modifiée en YAML (syntaxe des actions de script Home Assistant), avec les variables `regle`, `evenement` et `mode_alarme`.
+- **Bouton Tester** : exécute une règle sans armer l'alarme (les conditions restent vérifiées).
+- **Journal** des 50 dernières exécutions.
+- **Import / export** des règles depuis le panneau (fichier JSON ou presse-papiers), en ajout ou en remplacement.
+- **Panneau latéral** « Protocole Alarme » consultable par tous ; création, modification et test réservés aux administrateurs et aux personnes qu'ils autorisent.
+- **Types de règles personnalisables** : ajout, renommage, icône, ordre et suppression dans Réglages ; les règles d'un type supprimé vont dans « Autres ». Dans la liste, chaque type se replie ou se déplie (mémorisé sur l'appareil).
+- **Carte du tableau de bord** « Protocole Alarme » : armer / désarmer (avec code si l'alarme le demande), bouclier vert quand l'alarme est désarmée et rouge quand elle est armée, règles exécutées depuis le dernier armement ou désarmement (en direct), boutons d'armement colorés par mode, capteurs en pastilles (grisées au repos, orange quand ils sont ouverts ou en détection) dans l'ordre choisi ; listes repliables. Aucune ressource à ajouter.
+- **Interface en français et en anglais**, selon la langue de l'utilisateur.
 
-- **Automatique** : le moteur décide et envoie les ordres aux volets.
-- **Manuel** : aucun ordre n'est envoyé, vous pilotez vous-même ; les volets affichent « Mode manuel ».
-- **Arrêt** : aucune décision ni aucun ordre.
+### Installation
 
-La sécurité vent reste prioritaire dans les trois modes. Chaque mode est décrit sous son sélecteur dans le panneau.
+#### Par HACS (dépôt personnalisé)
 
-### Plage active
+[![Ouvrir dans HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=protocole_alarme&category=integration)
 
-- **Plage horaire de gestion** : heure de début et heure de fin réglables. La fin peut être une **heure fixe**,
-  le **coucher du soleil avec un décalage** en minutes (avant ou après), ou **lue dans une entité** (`sensor`,
-  `input_datetime`, `input_text`).
-- Réglable depuis le panneau et depuis vos tableaux de bord (entités `time`, `select` et `number` de la plage).
+1. Dans HACS, ajoutez `https://github.com/akoonet-homeassistant/protocole_alarme` comme dépôt personnalisé (catégorie *Intégration*), ou utilisez le bouton ci-dessus.
+2. Installez **Protocole Alarme**, puis redémarrez Home Assistant.
+3. *Paramètres → Appareils et services → Ajouter une intégration* → **Protocole Alarme**, puis choisissez l'alarme à suivre.
 
-### Ouverture et fermeture horaires
+#### Manuelle
 
-- **Ouverture du matin et fermeture du soir** de tous les volets, à **heure fixe** ou **selon le soleil** :
-  lever du soleil pour l'ouverture, coucher du soleil pour la fermeture, avec un **décalage de -60 à +60 minutes
-  par pas de 5**. Chaque moment (ouverture, fermeture) a son propre mode.
-- **Désactivable volet par volet** (cases « Ouverture du matin horaire » et « Fermeture du soir horaire » dans l'onglet Volets,
-  indépendantes l'une de l'autre, ou interrupteurs `switch.volets_<nom>_horaire_ouverture` et
-  `switch.volets_<nom>_horaire_fermeture`) et globalement (interrupteur `switch.volets_horaires`). Désactivée par défaut.
-- L'ouverture amène le volet à sa position d'ouverture ; la fermeture est complète. Un volet déjà dans la bonne
-  position n'est pas touché.
-- **Blocages de l'ouverture activables** (section « Blocages » de l'onglet Horaires, chacun avec son interrupteur) :
-  l'**alarme** bloque l'ouverture ; l'**alarme et une fenêtre ouverte** bloquent l'ouverture. Décochés,
-  l'ouverture passe quand même. La **fermeture** est gérée volet par volet par le choix « Fermeture du soir si
-  une fenêtre est ouverte » (voir plus bas). Un ordre bloqué est retenté à chaque évaluation pendant 3 heures,
-  puis abandonné pour la journée.
-- Les horaires sont indépendants de la plage active, mais **coupés par le scénario « Désactivé »**. Ils sont
-  aussi ignorés quand le mode global est « manuel » ou « arrêté » et pendant le délai de sécurité après un redémarrage ; la sécurité vent reste
-  prioritaire. Un ordre horaire met fin à une pause manuelle. Chaque ordre n'est exécuté qu'une fois par jour,
-  même après un redémarrage de Home Assistant. Les horaires sont autonomes : l'interrupteur `switch.volets_<nom>_auto` (protection
-  solaire) n'agit que sur la protection solaire, l'ouverture du matin et la fermeture du soir de chaque volet ont
-  chacune leur interrupteur et continuent de fonctionner même si la protection solaire est coupée. L'ouverture du matin ouvre même un volet fermé à 100 %, sans tenir compte de « Autoriser à
-  remonter un volet fermé à 100 % ».
-- **Gain solaire** : après la fermeture horaire du soir, un scénario de gain solaire (hiver) n'ouvre plus le volet
-  jusqu'à l'ouverture du matin. Si l'ouverture du matin est coupée pour ce volet (bouton O), le gain solaire n'est
-  bloqué que le reste du jour de la fermeture et reprend dès le lendemain : un volet peut ainsi s'ouvrir uniquement
-  grâce à la protection solaire (S), sans ouverture horaire.
+Copiez `custom_components/protocole_alarme` dans le dossier `custom_components` de votre configuration, redémarrez, puis ajoutez l'intégration.
 
-### Fermeture du soir si une fenêtre est ouverte
+### Utilisation
 
-Choix par volet (onglet Volets, section « Horaires d'ouverture et de fermeture »), qui ne concerne que la
-**fermeture automatique du soir** :
-
-- **Ne pas fermer** (par défaut) : le volet attend que la fenêtre soit fermée (fermeture retentée pendant 3 h).
-  Ce choix bloque toujours, quelle que soit la case « Ne pas fermer si une fenêtre est ouverte » de la section
-  « Fenêtres et portes », qui ne règle que la protection solaire.
-- **Fermer complètement** : le volet se ferme à l'heure prévue malgré la fenêtre.
-- **Presser un bouton** : le volet rejoint la position programmée du bouton (position favorite).
-- **Aller à une position (en %)** : le volet va à la position choisie (il ne remonte pas s'il est déjà plus bas).
-
-Avec « bouton » ou « position », le volet se **ferme complètement quand la fenêtre se referme**, au plus tard
-jusqu'à l'ouverture du lendemain. Tant que la fenêtre est ouverte, aucune autre règle ne déplace le volet. Un
-capteur indisponible ne referme pas le volet. Ces trois choix demandent au moins un capteur de fenêtre ; « bouton »
-demande aussi le bouton. Une fenêtre qui s'ouvre à un autre moment ne déclenche rien.
-
-### Façades et soleil
-
-- **Quatre façades, orientation de la maison** : nord, est, sud, ouest par défaut (renommables,
-  supprimables, on peut en ajouter). Vous indiquez vers où regarde la façade que vous appelez « Sud » :
-  toutes les façades tournent avec elle. Chaque volet est affecté à la façade de votre choix.
-- **Soleil calculé selon le jour** : l'exposition de chaque façade est calculée avec la date, l'heure et
-  la position GPS de Home Assistant (azimut et hauteur du soleil), donc elle suit les saisons sans
-  aucun capteur. Réglages par façade : angle d'éclairage et hauteur minimale du soleil (arbres,
-  voisins). Vous pouvez aussi utiliser un capteur existant (par exemple `binary_sensor.volets_exposition_*`).
-- **Plages d'ensoleillement toute la journée** : les capteurs de façade (`sensor.volets_facade_*_debut/fin`)
-  gardent leur valeur toute la journée (plage en cours, sinon la prochaine, sinon la dernière du jour), que la
-  façade soit exposée ou non.
-
-### Pilotage de chaque volet
-
-- **Boutons S / O / F par volet** : dans le tableau de bord du panneau (comme sur la carte), trois boutons activent ou coupent séparément la **protection solaire** (S, équivalent de `switch.volets_*_auto`), l'**ouverture horaire du matin** (O, `switch.volets_*_horaire_ouverture`) et la **fermeture horaire du soir** (F, `switch.volets_*_horaire_fermeture`). Le mode global et le scénario se choisissent dans deux listes déroulantes.
-- **Position voulue par volet** : chaque volet a sa propre position de protection (pourcentage,
-  bouton « position favorite » ou fermeture complète).
-- **Pause automatique après action manuelle** : si vous bougez un volet à la main, il est laissé
-  tranquille pendant la durée choisie (ou jusqu'à la fin de la plage active). Le statut « En pause » est
-  distinct d'un volet dont la gestion est désactivée.
-- **Fenêtre ou porte ouverte** : la fermeture est bloquée (utile pour les portes-fenêtres). Un capteur de
-  fenêtre indisponible compte comme « ouvert » : on ne prend pas le risque d'enfermer quelqu'un dehors.
-- **Vent** (stores et bannes) : mise en sécurité automatique au-delà d'un seuil, avec hystérésis. Elle est
-  prioritaire sur le mode (même « manuel » ou « arrêté »), le scénario, la pause et le délai de démarrage ;
-  seul un volet dont la gestion automatique est désactivée y échappe. Pour chaque volet, choisissez l'ordre
-  qui le met en sécurité : « ouvrir » (volet roulant remonté) ou « fermer » (store ou banne rentré).
-- **Volet fermé à 100 %, jamais remonté** : un volet fermé à 100 % n'est pas remonté par l'intégration, quelle que
-  soit la façon dont il a été fermé (à la main, par une autre automatisation, par l'intégration elle-même). Option par
-  volet pour lever cette règle dans le ou les scénarios de votre choix (Été, Hiver, Vacances). Seule exception : un
-  volet dont la protection est la fermeture totale (méthode « fermer » ou position 0 %) et que l'intégration a fermé
-  est remonté, sinon sa protection ne se terminerait jamais. « Fermé à 100 % » veut dire position 0 % rapportée par le
-  volet, ou état « fermé » pour un volet sans position. La règle vaut aussi pour la protection contre le vent
-  (un volet fermé est déjà à l'abri).
-
-### Sécurités et transparence
-
-- **Sécurités** : délai après redémarrage, aucune action si la température extérieure ou le capteur
-  d'exposition est indisponible.
-- **Transparence** : chaque volet affiche en français pourquoi il est dans son état.
-
-### Panneau et tableaux de bord
-
-- **Panneau de gestion** (« Interface de gestion » depuis la fenêtre Configurer) : sept onglets, voir plus bas.
-- **Entités pour vos tableaux de bord** : mode, scénario, seuils, plage active, façades, et un interrupteur
-  « Auto » et un statut par volet. L'onglet « Entités » du panneau liste les identifiants réels, avec des
-  exemples prêts à copier.
-
-## Installation
-
-Bouton d'installation rapide (nécessite d'avoir configuré [My Home Assistant](https://my.home-assistant.io)) :
-
-[![Open your Home Assistant instance and open the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=volets_intelligents&category=integration)
-
-1. HACS > Intégrations : recherchez « Volets Intelligents » (l'intégration est dans le catalogue par défaut de HACS) et téléchargez-la.
-2. Redémarrez Home Assistant.
-3. Paramètres > Appareils et services > Ajouter une intégration > Volets Intelligents.
-4. Ouvrez le panneau **Volets** dans la barre latérale et configurez.
-
-Si la recherche ne la trouve pas (HACS pas encore à jour, par exemple), ajoutez-la comme dépôt personnalisé : HACS > Intégrations > menu ⋮ > Dépôts personnalisés, collez l'adresse de ce dépôt (catégorie Intégration), puis reprenez à l'étape 1.
-
-Version minimale de Home Assistant : 2026.3.0. Le panneau et la carte sont disponibles en français et en anglais.
-
-### Accéder au panneau, masquer le menu latéral
-
-Dans Paramètres > Appareils et services > Volets Intelligents > **Configurer**, la case « Afficher “Volets” dans le menu
-latéral » permet de retirer l'entrée du menu. Le panneau reste accessible à l'adresse `/volets-intelligents` (lien
-fourni dans cette même fenêtre) et par le bouton **Visiter** de la page de l'appareil « Volets Intelligents ». La carte
-Lovelace n'est pas concernée. Le changement recharge l'intégration (quelques secondes).
-
-### Donner accès au panneau à d'autres personnes
-
-Dans la même fenêtre **Configurer**, le champ « Personnes désignées (accès complet au panneau) » permet de choisir des
-comptes Home Assistant non administrateurs. Ces personnes ont accès à **tous les onglets** du panneau (volets,
-façades, scénarios, entités, réglages) et peuvent tout modifier, comme un administrateur ; l'accès est contrôlé côté
-serveur. Les autres comptes non administrateurs ne voient que l'onglet Tableau de bord. Champ vide par défaut
-(administrateurs seulement). Une fois au moins une personne désignée, l'entrée « Volets » apparaît dans le menu de
-tous les comptes (menu masquable avec la case ci-dessus).
-
-### Icône dans la liste des mises à jour de HACS
-
-L'intégration fournit son icône et son logo (dossier `brand/`), que Home Assistant 2026.3 et plus affichent sur la page de
-l'intégration. HACS 2.0.5, lui, va chercher l'icône sur l'ancien serveur de logos de Home Assistant (qui n'a rien pour une
-intégration personnalisée) : « icon not available » s'affiche dans la liste des mises à jour tant que HACS n'est pas corrigé
-([hacs/integration#5171](https://github.com/hacs/integration/issues/5171)). En attendant, vous pouvez forcer l'image dans
-`configuration.yaml` (puis Outils de développement > YAML > Recharger la personnalisation, ou redémarrer) :
-
-```yaml
-homeassistant:
-  customize:
-    update.volets_intelligents_update:
-      entity_picture: /volets_intelligents_static/icon.png
-```
-
-L'identifiant `update.volets_intelligents_update` est celui créé par HACS ; vérifiez-le dans Paramètres > Entités si
-besoin. La liste des dépôts dans le panneau HACS lui-même garde son image par défaut.
-
-### Premiers pas
-
-1. **Orientation de la maison** (Réglages) : vers quel azimut regarde votre façade « Sud » ? 180 si votre
-   maison est alignée sur les points cardinaux, 135 si la façade principale regarde le sud-est.
-   Les coordonnées GPS viennent de la configuration de Home Assistant (Paramètres > Système > Général).
-2. **Température extérieure** (Réglages) : un capteur de température, et éventuellement la température ressentie.
-3. **Volets** : ajoutez vos volets (ajout groupé possible) et choisissez la façade de chacun.
-
-## Configuration dans le panneau
+Ouvrez le panneau **Protocole Alarme** dans la barre latérale.
 
 | Onglet | Contenu |
 |---|---|
-| Tableau de bord | Mode global, scénario, températures, plage active, état de chaque volet, pause et reprise. |
-| Volets | Liste des volets, tout ce qui est propre à un volet : façade, position de protection, méthode, température de la pièce, fenêtres, horaires (suivre ou non, fermeture du soir si une fenêtre est ouverte), vent. |
-| Façades | Orientation, angle d'éclairage, masque d'horizon, plages d'ensoleillement du jour. |
-| Protection solaire | Seuils et conditions de chaque scénario, options d'alarme, scénario automatique selon les mois, plage active. |
-| Horaires | Ouverture du matin et fermeture du soir de tous les volets (heure fixe ou soleil, décalage), blocages de l'ouverture par l'alarme. |
-| Réglages | Orientation de la maison, capteurs extérieurs et alarme, vent, météo, pause manuelle, import et export JSON. |
-| Entités | Identifiants réels des entités de l'intégration, exemples YAML prêts à copier, valeurs des modes et scénarios. |
+| Règles | Règles d'armement et de désarmement, activation, test, modification, duplication, suppression ; ajout par l'assistant ou à partir d'un modèle |
+| Entités | Les entités créées, avec leur état |
+| Journal | Les dernières exécutions : règle, moment, résultat, détail |
+| Réglages | **Général** (alarme suivie, protocole actif ou en pause, Lights Simulator), **Organisation des règles** (types de règles), **Accès** (personnes autorisées à modifier les règles, administrateurs), **Sauvegarde** (import / export) |
 
-Les captures ci-dessous utilisent des données de démonstration.
+Le bouton **Configurer** de l'intégration permet de changer d'alarme et d'afficher ou masquer le panneau dans la barre latérale. Masqué, il reste accessible à l'adresse `/protocole-alarme`.
 
-### Tableau de bord
+**Quand une règle s'exécute-t-elle ?** À l'armement, quand l'alarme passe de *désarmée* ou *en cours d'armement* à un état *armée* (absent, nuit, présent, vacances, personnalisé). Au désarmement, quand elle repasse à *désarmée* depuis un état armé, en attente ou déclenché. Pour le désarmement, le filtre de modes porte sur le mode dans lequel l'alarme était armée. Avec l'option « Surveiller aussi pendant l'armement », une règle d'armement s'exécute aussi quand l'une de ses conditions devient vraie alors que l'alarme est armée dans l'un de ses modes, après le délai après armement éventuel, et sauf si la condition était déjà vraie à l'armement et que l'option « Ignorer si c'est déjà le cas à l'armement » est cochée (avec « Tolérer seulement si… », tant que l'entité choisie reste dans l'état indiqué).
 
-![Tableau de bord](docs/screenshots/tableau-de-bord.png)
+### Carte du tableau de bord
 
-### Protection solaire
+Modifier le tableau de bord → **Ajouter une carte** → **Protocole Alarme**. Tout se règle dans l'éditeur visuel ; en YAML :
 
-![Protection solaire](docs/screenshots/scenarios.png)
+```yaml
+type: custom:protocole-alarme-card
+entity: alarm_control_panel.alarme_maison   # facultatif : alarme suivie par l'intégration par défaut
+nom: Alarme                                  # facultatif : titre
+modes:                                       # modes affichés (ceux que l'alarme ne gère pas sont ignorés)
+  - armed_away
+  - armed_night
+capteurs:                                    # capteurs, dans l'ordre d'affichage
+  - binary_sensor.fenetre_salon
+  - binary_sensor.porte_garage
+afficher_regles: true                        # liste « Règles exécutées »
+afficher_capteurs: true                      # liste « Capteurs »
+affichage_capteurs: pastilles                # pastilles | lignes (deux colonnes) | resume (ouverts seulement)
+afficher_panneau: true                       # bouton « Règles » vers le panneau (alarme désarmée)
+```
 
-### Volets
+Bouclier : vert (désarmée), rouge (armée), orange (armement, attente), rouge clignotant (alarme déclenchée), gris (indisponible). Les règles affichées sont celles qui ont réellement agi depuis le dernier armement ou désarmement, avec le résultat de leur vérification. Dans l'éditeur, les capteurs se trient avec les flèches (monter / descendre) et se retirent avec la croix. Un appui sur le titre d'une liste la replie ; un appui sur un capteur ouvre sa fiche. Le bouton **Règles** ouvre le panneau Protocole Alarme ; il n'apparaît que lorsque l'alarme est désarmée.
 
-![Volets](docs/screenshots/volets.png)
+### Captures d'écran
 
-### Façades
+| | |
+|---|---|
+| **Règles** — armement et désarmement<br>![Règles](docs/screenshots/regles.png) | **Modèles** — points de départ<br>![Modèles](docs/screenshots/modeles.png) |
+| **Étape 1 — Quand ?**<br>![Quand](docs/screenshots/etape1.png) | **Étape 2 — Si…**<br>![Si](docs/screenshots/etape2.png) |
+| **Étape 3 — Alors…** — impulsion et vérification<br>![Alors](docs/screenshots/etape3.png) | **Récapitulatif**<br>![Récapitulatif](docs/screenshots/recap.png) |
+| **Choix de l'entité** — type, état, filtres<br>![Choix de l'entité](docs/screenshots/selecteur_condition.png) | **Choix de l'action** — Lights Simulator non installé<br>![Sélecteur](docs/screenshots/selecteur_simulateur.png) |
+| **Mode avancé** — YAML<br>![Avancé](docs/screenshots/avance.png) | **Réglages**<br>![Réglages](docs/screenshots/reglages.png) |
+| **Journal**<br>![Journal](docs/screenshots/journal.png) | **Entités**<br>![Entités](docs/screenshots/entites.png) |
+| **Import / export**<br>![Import](docs/screenshots/import.png) | **Intrusion — Quand ?** — délai après armement, tolérer seulement si le volet est fermé<br>![Intrusion](docs/screenshots/intrusion.png) |
+| **Volet — Alors…** — actions en cas d'échec (déclencher l'alarme, prévenir)<br>![Actions en cas d'échec](docs/screenshots/actions_echec.png) | **Récapitulatif** — type de règle<br>![Type de règle](docs/screenshots/type_regle.png) |
+| **Réglages sur grand écran** — général, types de règles, accès, sauvegarde<br>![Réglages](docs/screenshots/types.png) | **Carte du tableau de bord** — désarmée, armée, déclenchée<br>![Carte](docs/screenshots/carte.png) |
+| **Configuration de la carte** — modes, capteurs triés<br>![Configuration de la carte](docs/screenshots/carte_config.png) | **Remettre l'état au désarmement** — entités mémorisées, état affiché dans la liste<br>![Remettre l'état](docs/screenshots/restaurer.png) |
 
-![Façades](docs/screenshots/facades.png)
-
-### Horaires
-
-![Horaires](docs/screenshots/horaires.png)
-
-### Réglages
-
-![Réglages](docs/screenshots/reglages.png)
+*Captures réalisées sur une installation de démonstration : toutes les entités sont fictives.*
 
 ### Entités
 
-![Entités](docs/screenshots/entites.png)
-
-### Comment le soleil est calculé
-
-L'azimut d'une façade est sa direction cardinale (nord 0°, est 90°, sud 180°, ouest 270°) décalée de
-« orientation de la maison − 180 ». Une façade « personnalisée » (lucarne, pan de toit) a son propre azimut.
-Elle est éclairée quand le soleil est au-dessus de la hauteur minimale ET à moins de l'angle d'éclairage
-(80° par défaut) de la perpendiculaire à la façade. Il s'agit d'une géométrie simple : elle ne connaît ni
-les débords de toit ni les obstacles, que l'on compense avec la hauteur minimale ou un capteur d'exposition.
-
-### Règles de la protection thermique
-
-Un volet **non protégé** se ferme si : la façade est exposée ET (température extérieure effective
-> seuil de fermeture extérieur OU température de la pièce > seuil de fermeture pièce).
-La température extérieure effective est le maximum entre la mesure et la température ressentie.
-
-Un volet **protégé par l'intégration** remonte si la façade n'est plus exposée, ou selon le mode de relâche :
-
-- `all` (recommandé) : extérieur sous le seuil d'ouverture ET pièce sous le seuil d'ouverture. Évite
-  que la pièce, refroidie par le volet fermé, le fasse rouvrir en plein soleil.
-- `any` : comportement de l'ancienne automatisation, un seul des deux suffit (extérieur OU pièce).
-- `room` : seule la pièce compte (sous son seuil d'ouverture).
-- `outdoor` : seul l'extérieur compte (sous son seuil d'ouverture).
-
-À la fin de la plage active, les volets encore protégés remontent.
-
-## Entités pour vos tableaux de bord
-
-L'intégration crée un appareil « Volets Intelligents » qui regroupe toutes ses entités. Les identifiants
-ci-dessous sont les identifiants **habituels** : Home Assistant les construit à partir du nom du volet au
-moment de sa création. Vérifiez les vôtres dans Paramètres > Appareils et services > Volets Intelligents
-(ou en cherchant « volets » dans Paramètres > Entités). Dans les exemples, `bureau` est à remplacer par le
-nom de votre volet.
-
-### Entités globales
-
-| Entité | Type | Valeurs | Usage |
-|---|---|---|---|
-| `select.volets_mode` | select | `auto`, `manual`, `off` (affichés Automatique, Manuel, Arrêté) | Mode global. **Automatique** : le moteur décide et envoie les ordres. **Manuel** : aucun ordre envoyé (les volets affichent « Mode manuel »). **Arrêté** : aucune décision ni ordre (la sécurité vent reste prioritaire). Modifiable depuis un tableau de bord. |
-| `select.volets_scenario` | select | Nom de chaque scénario (par défaut Été, Hiver, Vacances, Désactivé ; suit le champ « Libellé ») | Scénario actif. `select_option` accepte aussi les clés `summer`, `winter`, `vacation`, `off`. Modifiable, sauf quand le scénario automatique selon le mois est activé. |
-| `sensor.volets_temperature_exterieure_effective` | sensor (°C) | nombre, ou indisponible | Température extérieure réellement utilisée par les règles (maximum entre la mesure et la température ressentie si l'option est activée). |
-
-### Plage active
-
-| Entité | Type | Usage |
-|---|---|---|
-| `binary_sensor.volets_plage_active` | binary_sensor | `on` quand l'heure courante est dans la plage active. |
-| `sensor.volets_plage_debut` | sensor (horodatage) | Début de la plage active du moment. |
-| `sensor.volets_plage_fin` | sensor (horodatage) | Fin de la plage active du moment (vide si la fin est indisponible). |
-| `time.volets_reglage_plage_debut` | time | **Réglage** de l'heure de début. Modifiable depuis un tableau de bord. |
-| `time.volets_reglage_plage_fin` | time | **Réglage** de l'heure de fin fixe (aussi utilisée en repli si l'entité de fin est indisponible). |
-| `select.volets_reglage_plage_mode_fin` | select | **Réglage** du mode de fin : `fixed` (heure fixe), `entity` (lue dans une entité), `sunset` (coucher du soleil). Le mode `entity` demande qu'une entité de fin soit déjà choisie dans le panneau, sinon le changement est refusé. |
-| `number.volets_reglage_plage_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -240 à 240, utile en mode `sunset`). |
-
-### Ouverture et fermeture horaires
-
-| Entité | Type | Usage |
-|---|---|---|
-| `switch.volets_horaires` | switch | **Réglage** : active les ouvertures et fermetures horaires de tous les volets. |
-| `select.volets_horaire_ouverture_mode` | select | **Réglage** du mode d'ouverture : `fixed` (heure fixe) ou `sun` (lever du soleil). |
-| `time.volets_horaire_ouverture_heure` | time | **Réglage** de l'heure d'ouverture fixe (aussi utilisée en repli si l'heure du soleil est indisponible). |
-| `number.volets_horaire_ouverture_decalage_lever` | number (min) | **Réglage** du décalage par rapport au lever du soleil (de -60 à 60, par pas de 5, utile en mode `sun`). |
-| `sensor.volets_ouverture_prevue` | sensor (horodatage) | Heure d'ouverture du jour (vide si les horaires sont désactivés). |
-| `select.volets_horaire_fermeture_mode` | select | **Réglage** du mode de fermeture : `fixed` ou `sun` (coucher du soleil). |
-| `time.volets_horaire_fermeture_heure` | time | **Réglage** de l'heure de fermeture fixe (repli compris). |
-| `number.volets_horaire_fermeture_decalage_coucher` | number (min) | **Réglage** du décalage par rapport au coucher du soleil (de -60 à 60, par pas de 5). |
-| `sensor.volets_fermeture_prevue` | sensor (horodatage) | Heure de fermeture du jour (vide si les horaires sont désactivés). |
-| `switch.volets_horaire_alarme_bloque_ouverture` | switch | **Réglage** : l'alarme activée bloque l'ouverture horaire. |
-| `switch.volets_horaire_alarme_et_fenetre_bloquent_ouverture` | switch | **Réglage** : l'alarme activée et une fenêtre ouverte bloquent l'ouverture horaire. |
-
-### Seuils des scénarios
-
-| Entité | Type | Usage |
-|---|---|---|
-| `number.volets_seuil_ete_fermeture_exterieur` | number (°C) | **Réglage** : l'été, fermeture quand l'extérieur atteint ce seuil. |
-| `number.volets_seuil_ete_fermeture_piece` | number (°C) | **Réglage** : l'été, fermeture quand la pièce atteint ce seuil. |
-| `number.volets_seuil_ete_reouverture_exterieur` | number (°C) | **Réglage** : l'été, réouverture sous ce seuil extérieur. |
-| `number.volets_seuil_ete_reouverture_piece` | number (°C) | **Réglage** : l'été, réouverture sous ce seuil pièce. |
-| `number.volets_seuil_hiver_gain_exterieur` | number (°C) | **Réglage** : l'hiver, gain solaire quand l'extérieur est sous ce seuil. |
-| `number.volets_seuil_hiver_gain_piece` | number (°C) | **Réglage** : l'hiver, gain solaire quand la pièce est sous ce seuil. |
-
-Ils modifient le scénario correspondant ; les scénarios « vacances » et « désactivé » n'ont pas de seuils.
-
-L'entité qui fournit la fin de plage (par exemple `sensor.volets_heure_remontee`) se choisit dans le panneau
-(onglet Protection solaire). Chaque modification faite par ces entités est enregistrée comme si elle venait du panneau.
-
-### Façades : exposition et horaires
-
-Une série d'entités par façade (Nord, Est, Sud, Ouest et vos façades ajoutées) :
-
-| Entité | Type | Usage |
-|---|---|---|
-| `binary_sensor.volets_facade_<nom>_exposee` | binary_sensor | `on` quand la façade reçoit le soleil (météo comprise), `off` sinon, inconnu si le capteur d'exposition est indisponible. Attributs : `facade`, `orientation`, `azimuth`, `source` (`sun` ou `entity`), `windows` (toutes les plages d'ensoleillement théoriques du jour). |
-| `sensor.volets_facade_<nom>_debut` | sensor (horodatage) | Début de la plage d'ensoleillement en cours, sinon de la prochaine, sinon de la dernière du jour. Vide si la façade n'est jamais exposée ce jour-là, ou en mode « capteur existant ». |
-| `sensor.volets_facade_<nom>_fin` | sensor (horodatage) | Fin de cette même plage. |
-
-Ces entités portent des noms différents de vos éventuels capteurs `binary_sensor.volets_exposition_*` : il n'y a
-aucun conflit. Les horaires sont des horaires théoriques (géométrie du soleil, sans météo ni obstacle) et se
-rafraîchissent à chaque évaluation (toutes les 5 minutes par défaut).
-
-### Entités par volet
-
-| Entité | Type | Description |
-|---|---|---|
-| `switch.volets_<nom>_auto` | switch | Gestion automatique du volet : `on` = géré, `off` = ignoré par l'intégration. Remplace les `input_boolean.auto_volet_*`. |
-| `select.volets_<nom>_horaire_fenetre` | select | **Réglage** : fermeture du soir si une fenêtre est ouverte : `block` (ne pas fermer), `close` (fermer complètement), `button` (presser le bouton de position programmée), `position` (aller à la position choisie). Avec `button` et `position`, le volet se ferme complètement quand la fenêtre se referme. |
-| `number.volets_<nom>_horaire_fenetre_position` | number (%) | **Réglage** : position atteinte avec le choix `position` (0 % = fermé). |
-| `switch.volets_<nom>_horaire_ouverture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de l'**ouverture du matin** horaire. |
-| `switch.volets_<nom>_horaire_fermeture` | switch | Inclut (`on`, par défaut) ou exclut (`off`) le volet de la **fermeture du soir** horaire. Désactivée, le choix « Fermeture du soir si une fenêtre est ouverte » et le blocage du gain solaire après la fermeture ne s'appliquent plus à ce volet. |
-| `sensor.volets_<nom>_statut` | sensor (énumération) | Statut du volet (voir ci-dessous). L'explication en français et les autres informations sont dans les attributs. |
-
-Valeurs du statut (`sensor.volets_<nom>_statut`) :
-
-| Valeur | Affichage | Sens |
-|---|---|---|
-| `shaded` | Protégé du soleil | Le volet a été abaissé par l'intégration. |
-| `watching` | Surveillance | Rien à faire pour le moment. |
-| `paused` | En pause | Action manuelle détectée, ou pause demandée. |
-| `schedule` | Horaire | Ouverture ou fermeture horaire en cours (ou en attente : alarme). |
-| `window_open` | Fenêtre ouverte | Fermeture bloquée, volet en position programmée pendant que la fenêtre est ouverte (ou capteur de fenêtre indisponible). |
-| `wind_protected` | Protégé du vent | Mis en sécurité à cause du vent. |
-| `cooldown` | Anti-usure | Attente de l'intervalle minimal entre deux mouvements. |
-| `outside_window` | Hors plage | En dehors de la plage active. |
-| `grace` | Démarrage | Délai de sécurité après un redémarrage. |
-| `no_data` | Données manquantes | Température extérieure ou exposition indisponible : aucune action. |
-| `mode_manual` | Mode manuel | Le mode global est « manuel ». |
-| `mode_off` | Arrêté | Le mode global est « arrêté ». |
-| `scenario_off` | Scénario désactivé | Le scénario actif ne commande aucun volet (horaires compris). |
-| `disabled` | Désactivé | Protection solaire coupée pour ce volet (interrupteur sur `off`) ; les horaires restent actifs s'ils sont cochés. |
-| `unavailable` | Indisponible | L'entité volet est indisponible. |
-
-Attributs de `sensor.volets_<nom>_statut` :
-
-| Attribut | Contenu |
+| Entité | Rôle |
 |---|---|
-| `reason` | Phrase en français qui explique la situation (par exemple « Soleil sur la façade Est et 27,4 °C dehors »). |
-| `cover` | Entité du volet piloté (par exemple `cover.calyps_home_volet_bureau`). |
-| `position` | Position actuelle en pourcentage, ou vide si le volet n'en rapporte pas. |
-| `room_temp` | Température de la pièce utilisée, ou vide. |
-| `exposed` | `true` si la façade reçoit le soleil (météo comprise), `false` sinon, vide si l'information est indisponible. |
-| `paused_until` | Date et heure de fin de pause, ou vide. |
-| `shaded_by_us` | `true` si l'intégration a abaissé le volet. |
-| `last_action` | Dernière action de l'intégration : `close` ou `open`. |
-| `last_action_at` | Date et heure de cette action. |
-| `window_state` | État des capteurs d'ouverture du volet : `open`, `closed`, `unknown` (capteur indisponible), vide si aucun capteur. Une seule fenêtre ouverte suffit pour `open`. |
+| `switch.protocole_alarme_protocole_actif` | Coupé : plus aucune règle ne s'exécute (le journal le note) |
+| `switch.protocole_alarme_regle_<nom>` | Une par règle : règle active ou non |
+| `button.protocole_alarme_tester_<nom>` | Une par règle : exécute la règle tout de suite |
+| `sensor.protocole_alarme_derniere_execution` | Date de la dernière règle exécutée ; attributs `regle`, `evenement`, `resultat`, `detail` |
+| `sensor.protocole_alarme_regles_actives` | Nombre de règles actives ; attributs `armement`, `desarmement` |
+| `binary_sensor.protocole_alarme_echec_de_verification` | Problème quand la dernière vérification a échoué |
 
-Les entités d'un volet apparaissent ou disparaissent quand vous ajoutez ou retirez le volet dans le panneau.
-
-**Onglet « Entités » du panneau.** Il liste les identifiants réels des entités de votre installation (lus dans
-Home Assistant, donc exacts même si vous les avez renommées), avec un bouton « Copier » par identifiant, la
-liste des valeurs possibles et des exemples de cartes YAML déjà remplis avec vos identifiants.
-
-### Exemples prêts à copier
-
-Pilotage global (à adapter si vos identifiants diffèrent) :
-
-```yaml
-type: entities
-title: Volets intelligents
-entities:
-  - entity: select.volets_mode
-    name: Mode
-  - entity: select.volets_scenario
-    name: Scénario
-  - entity: sensor.volets_temperature_exterieure_effective
-    name: Température extérieure utilisée
-```
-
-Un volet avec son interrupteur, son statut et l'explication :
-
-```yaml
-type: entities
-title: Bureau
-entities:
-  - entity: cover.calyps_home_volet_bureau
-  - entity: switch.volets_bureau_auto
-    name: Gestion automatique
-  - entity: sensor.volets_bureau_statut
-    name: Statut
-  - type: attribute
-    entity: sensor.volets_bureau_statut
-    attribute: reason
-    name: Pourquoi
-```
-
-Explication de plusieurs volets dans une carte Markdown :
-
-```yaml
-type: markdown
-title: Volets, pourquoi ?
-content: >
-  **Bureau** : {{ state_attr('sensor.volets_bureau_statut', 'reason') }}
-
-  **Salon** : {{ state_attr('sensor.volets_salon_statut', 'reason') }}
-```
-
-Compter les volets actuellement abaissés par l'intégration (un modèle prêt à coller dans une carte Markdown ou
-dans un capteur modèle) :
-
-```yaml
-{{ states.sensor
-   | selectattr('attributes.volets_intelligents', 'defined')
-   | selectattr('state', 'eq', 'shaded')
-   | list | count }}
-```
-
-Tous les capteurs de statut portent l'attribut `volets_intelligents: true`, ce qui permet de les retrouver
-sans lister leurs noms, par exemple avec la carte `auto-entities` :
-
-```yaml
-type: custom:auto-entities
-card:
-  type: entities
-  title: Statut des volets
-filter:
-  include:
-    - domain: sensor
-      attributes:
-        volets_intelligents: true
-```
+Les identifiants exacts dépendent de la langue de Home Assistant au moment de l'installation.
 
 ### Services
 
-| Service | Champs | Effet |
-|---|---|---|
-| `volets_intelligents.pause` | `entity_id` (volets, tous si vide), `minutes` (durée des réglages si vide) | Met des volets en pause. |
-| `volets_intelligents.resume` | `entity_id` (tous si vide) | Reprend la gestion automatique. |
-| `volets_intelligents.evaluate` | aucun | Force une évaluation immédiate. |
+| Service | Rôle |
+|---|---|
+| `protocole_alarme.exporter_regles` | Renvoie toutes les règles (réponse du service) : sauvegarde, copie vers une autre installation |
+| `protocole_alarme.importer_regles` | Ajoute une liste de règles (`regles`), ou remplace toutes les règles (`remplacer: true`). Tout est vérifié avant l'enregistrement : une seule règle invalide et rien n'est modifié |
+
+Ces services sont réservés aux administrateurs (et aux automatisations ou scripts de Home Assistant).
+
+### Sécurité
+
+- Création, modification, duplication, suppression et test des règles depuis le panneau : **administrateurs et personnes autorisées** par un administrateur (vérifié côté serveur). Les autres utilisateurs voient les règles en lecture seule.
+- Le **mode avancé** (script YAML libre) et la **liste des personnes autorisées** restent réservés aux administrateurs : un script libre peut appeler n'importe quel service. Une personne autorisée peut renommer, tester ou repasser en mode simple une règle avancée existante, sans modifier son script.
+- En mode simple, une règle ne peut appeler que les actions prévues pour chaque type d'entité, les services `notify.*` et les entités de notification : pas d'appel de service arbitraire.
+- Les messages de notification sont des modèles Home Assistant (syntaxe vérifiée à l'enregistrement) : ils peuvent afficher l'état de n'importe quelle entité. N'autorisez à modifier les règles que des personnes de confiance.
+- Le mode avancé exécute un script Home Assistant avec les mêmes droits qu'un script créé par un administrateur ; le YAML est lu en mode sûr et vérifié par Home Assistant avant enregistrement.
+- Les identifiants d'entité, de règle et de service sont contrôlés, les textes affichés sont échappés, les tailles sont limitées (100 règles, 50 actions par règle, 20 actions en cas d'échec, 100 étapes par script avancé, journal de 50 lignes).
+- Les actions lancées par un test sont rattachées à l'utilisateur qui l'a lancé, et celles lancées par l'alarme au changement d'état de l'alarme (journal de bord).
+- La carte lit l'état de l'alarme et les noms et résultats des règles exécutées (lecture seule, pour tout utilisateur connecté) ; armer et désarmer passent par les services de l'alarme, avec les droits de l'utilisateur. Le code n'est jamais enregistré.
+- La remise en état au désarmement n'accepte que des entités dont l'état peut être rejoué (lumières, interrupteurs, volets, thermostats…) et seulement l'état et quelques réglages utiles ; les **serrures sont exclues** pour ne jamais déverrouiller une porte automatiquement. La mémoire est relue et contrôlée au démarrage.
+- Comme toute entité Home Assistant, l'interrupteur « Protocole actif », les interrupteurs de règle et les boutons « Tester » peuvent être utilisés par tous les utilisateurs et par les assistants vocaux exposés ; limitez leur exposition si nécessaire.
+
+### Limites
+
+- Une seule alarme suivie.
+- Les conditions comparent l'état exact d'une entité (pas de seuil numérique) ; pour des cas plus complexes, utilisez le mode avancé.
+- Lights Simulator est piloté par son sélecteur « Mode » ; il doit être installé et configuré séparément.
+- La notification critique utilise les paramètres de l'application mobile Home Assistant ; les entités de notification (Telegram…) reçoivent un message normal.
+- Le type de règle est deviné d'après les actions (ex. un interrupteur qui pilote des lumières est classé dans « Autres ») : changez-le dans le récapitulatif si besoin.
+- Remettre l'état d'un **interrupteur général** (qui allume ou éteint plusieurs lumières) les rallume toutes : mettez plutôt les lumières une par une dans la liste à remettre en état.
+- La remise en état rejoue l'état d'avant l'armement, même si l'entité a été changée entre-temps. Si l'alarme est désarmée pendant un arrêt de Home Assistant ou quand le protocole est en pause, rien n'est remis et la mémoire est oubliée.
+
+---
+
+## English
+
+Protocole Alarme runs actions when you **arm** or **disarm** your Home Assistant alarm. You choose, entity by entity, what should happen, without writing automations:
+
+- if a window is open, close that room's shutter;
+- if the garage door is open, send a pulse to the motor, then check it actually closed;
+- turn on a light, set the heating to eco, start the presence simulator;
+- when disarmed, stop the simulator, turn on the hallway light, send a notification…
+
+### Features
+
+- **3-step wizard**: *When* (arming or disarming, alarm modes), *If* (optional conditions on entity states), *Then* (actions), followed by a readable summary.
+- **Actions with settings by entity type**: covers (open, close, position), lights (turn on with brightness, turn off), switches (on, off, **pulse** with adjustable length), locks, climate (preset, temperature), media, scenes, scripts, automations, selects, valves, buttons and notifications.
+- **Result check**: after a delay, checks an entity is in the expected state (e.g. shutter closed); otherwise runs **one or more actions on failure** (notify, trigger the alarm, turn on a light…) and turns on the “Check failed” sensor. No automatic retry.
+- **Notifications**: an action like any other, to one or more recipients — phones, Home Assistant and **notification entities** such as Telegram (sent with `notify.send_message`).
+- **Messages with variables**: `{{ regle }}` and `{{ entite }}` (the entity that triggered the rule) in every notification; on failure, `{{ entite }}` is the checked entity and `{{ etat_actuel }}`, `{{ etat_attendu }}` are available. A preview shows the filled-in message; states use Home Assistant's labels.
+- **Allowed people**: besides administrators, other users can be allowed to change rules (Settings tab).
+- **Readable entity picker**: search, type filters, and for each entity its type (Window, Garage door, Motion…), state and icon.
+- **Watch while armed** (option): if an arming rule's condition becomes true while the alarm is already armed (e.g. a window opens), the rule runs too. Coming back from “unavailable” triggers nothing.
+- **Do nothing for… after arming** (watch): watching only starts after this delay (0 to 600 s), giving other rules time to close the shutters.
+- **Ignore if already the case when armed** (watch): a window left open when arming is tolerated until disarming; only new openings count. Avoids conflicts with a rule that closes the shutter of an open window.
+- **Only if…**: the tolerance only applies while another entity is in a given state (e.g. the room's shutter is closed). If the shutter opens again, or the window opens again with the shutter open, the rule runs.
+- **Rules grouped by type**: Shutters & windows, Intrusion, Doors & garage, Lights & simulation, Heating, Notifications, Other. The type is suggested from the actions and can be changed in the summary.
+- **Trigger the alarm**: action that triggers the followed alarm (intrusion).
+- **Critical notification**: on the Home Assistant mobile app, rings even in silent / Do Not Disturb mode.
+- **Automatic upgrade** of rules from earlier versions: the check's “Notify” list becomes a notification action, with the same message.
+- **Restore the state on disarming** (arming rules): the state of the chosen entities is saved right before the rule acts, then put back when the alarm is disarmed — including a light's brightness and colour, a shutter's position, a thermostat's mode and setpoint. The list is filled with the entities the rule drives and can be edited by hand; the saved state survives a Home Assistant restart and is shown in the rule list. Restoring happens before the disarming rules, which keep the last word.
+- **Delay before running** per rule.
+- **Cancellation**: disarming stops arming rules still in progress (delay, pulse, check), and the other way round.
+- **Home Assistant restart**: never triggers a rule.
+- **Presence simulator**: drives [Lights Simulator](https://github.com/akoonet-homeassistant/lights_simulator) (Start, Back to Auto, Stop). If it is not installed, the panel offers to install it through HACS; if it already follows the alarm by itself, a warning flags the double control.
+- **Templates** to get started in two clicks (garage, shutter, simulator, light, notification, **trigger the alarm if a window opens**).
+- **Advanced mode**: a rule can be edited in YAML (Home Assistant script action syntax), with the `regle`, `evenement` and `mode_alarme` variables.
+- **Test button**: runs a rule without arming the alarm (conditions are still checked).
+- **Log** of the last 50 runs.
+- **Import / export** of rules from the panel (JSON file or clipboard), adding or replacing.
+- **Sidebar panel** “Protocole Alarme” readable by everyone; creating, editing and testing are reserved to administrators and the people they allow.
+- **Customisable rule types**: add, rename, icon, order and delete in Settings; rules of a deleted type go to “Other”. In the list, each type can be collapsed or expanded (remembered on the device).
+- **Dashboard card** “Protocole Alarme”: arm / disarm (with a code if the alarm requires one), green shield when disarmed and red when armed, rules that ran since the last arming or disarming (live), arming buttons coloured by mode, sensors as chips (greyed when idle, orange when open or detecting) in the chosen order; collapsible lists. No resource to add.
+- **French and English interface**, following the user's language.
+
+### Installation
+
+#### Through HACS (custom repository)
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=akoonet-homeassistant&repository=protocole_alarme&category=integration)
+
+1. In HACS, add `https://github.com/akoonet-homeassistant/protocole_alarme` as a custom repository (*Integration* category), or use the button above.
+2. Install **Protocole Alarme**, then restart Home Assistant.
+3. *Settings → Devices & services → Add integration* → **Protocole Alarme**, then choose the alarm to follow.
+
+#### Manual
+
+Copy `custom_components/protocole_alarme` into the `custom_components` folder of your configuration, restart, then add the integration.
+
+### Usage
+
+Open the **Protocole Alarme** panel in the sidebar.
+
+| Tab | Content |
+|---|---|
+| Rules | Arming and disarming rules, enable, test, edit, duplicate, delete; add with the wizard or from a template |
+| Entities | The created entities with their state |
+| Log | Latest runs: rule, moment, result, detail |
+| Settings | **General** (followed alarm, protocol enabled or paused, Lights Simulator), **Rule organisation** (rule types), **Access** (people allowed to change rules, administrators), **Backup** (import / export) |
+
+The integration's **Configure** button changes the alarm and shows or hides the panel in the sidebar. When hidden, it stays reachable at `/protocole-alarme`.
+
+**When does a rule run?** On arming, when the alarm goes from *disarmed* or *arming* to an *armed* state (away, night, home, vacation, custom). On disarming, when it goes back to *disarmed* from an armed, pending or triggered state. For disarming rules, the mode filter applies to the mode the alarm was armed in. With the “Also watch while armed” option, an arming rule also runs when one of its conditions becomes true while the alarm is armed in one of its modes, after the optional delay after arming, unless the condition was already true when armed and the “Ignore if already the case when armed” option is checked (with “Only if…”, as long as the chosen entity stays in the given state).
+
+### Dashboard card
+
+Edit dashboard → **Add card** → **Protocole Alarme**. Everything can be set in the visual editor; in YAML:
 
 ```yaml
-type: button
-name: Pause 2 h, salon
-tap_action:
-  action: perform-action
-  perform_action: volets_intelligents.pause
-  data:
-    entity_id: cover.calyps_home_volet_canape
-    minutes: 120
+type: custom:protocole-alarme-card
+entity: alarm_control_panel.house_alarm   # optional: the alarm followed by the integration by default
+nom: Alarm                                # optional: title
+modes:                                    # modes shown (modes the alarm does not support are ignored)
+  - armed_away
+  - armed_night
+capteurs:                                 # sensors, in display order
+  - binary_sensor.living_room_window
+  - binary_sensor.garage_door
+afficher_regles: true                     # “Rules that ran” list
+afficher_capteurs: true                   # “Sensors” list
+affichage_capteurs: pastilles             # pastilles (chips) | lignes (two columns) | resume (open only)
+afficher_panneau: true                    # “Rules” button to the panel (alarm disarmed)
 ```
 
-## Carte Lovelace
+Shield: green (disarmed), red (armed), orange (arming, pending), blinking red (alarm triggered), grey (unavailable). The rules shown are the ones that actually acted since the last arming or disarming, with their check result. In the editor, sensors are sorted with the arrows (up / down) and removed with the cross. Tap a list title to collapse it; tap a sensor to open its details. The **Rules** button opens the Protocole Alarme panel; it only shows while the alarm is disarmed.
 
-La carte est chargée automatiquement : l'intégration la déclare comme ressource Lovelace (mode stockage ; en mode YAML, ajoutez la ressource `/volets_intelligents_static/volets-card.js` de type module). Ajoutez-la depuis l'éditeur de tableau de bord
-(« Volets Intelligents ») ou en YAML :
+### Screenshots
 
-```yaml
-type: custom:volets-intelligents-card
-title: Volets
-```
+The screenshots above (French interface) show every screen; the interface switches to English automatically for English-speaking users. *All entities are fictional.*
 
-La carte permet de choisir le mode et le scénario (deux listes déroulantes côte à côte), et affiche les volets
-**regroupés par façade**. Le bandeau de chaque façade donne sa plage d'exposition du jour et signale la façade
-actuellement au soleil. En été, un volet protégé du soleil indique l'heure à laquelle il remonte au plus tard (fin de
-l'exposition de sa façade). Un clic sur le nom d'un volet ouvre la fenêtre de contrôle de son entité.
+### Entities
 
-Chaque volet porte trois interrupteurs : **S** (protection solaire), **O** (ouverture horaire) et **F** (fermeture
-horaire). Un bouton vert est activé, un bouton gris est désactivé ; ils agissent comme les interrupteurs
-`switch.volets_*_auto`, `switch.volets_*_horaire_ouverture` et `switch.volets_*_horaire_fermeture`.
+| Entity | Role |
+|---|---|
+| `switch.protocole_alarme_protocol_enabled` | Off: no rule runs any more (noted in the log) |
+| `switch.protocole_alarme_rule_<name>` | One per rule: rule enabled or not |
+| `button.protocole_alarme_test_<name>` | One per rule: runs the rule right away |
+| `sensor.protocole_alarme_last_run` | Date of the last rule run; attributes `regle`, `evenement`, `resultat`, `detail` |
+| `sensor.protocole_alarme_active_rules` | Number of active rules; attributes `armement`, `desarmement` |
+| `binary_sensor.protocole_alarme_check_failed` | Problem when the last check failed |
 
-Options de la carte (toutes facultatives, réglables dans l'éditeur visuel de la carte) :
+Exact entity IDs depend on Home Assistant's language at installation time.
 
-```yaml
-type: custom:volets-intelligents-card
-title: Volets
-show_solar: true     # interrupteur S (protection solaire) ; false = masqué
-show_open: true      # interrupteur O (ouverture horaire) ; false = masqué
-show_close: false    # interrupteur F (fermeture horaire) ; false = masqué
-order:               # ordre des volets (les volets non listés viennent après)
-  - cover.calyps_home_volet_du_bar
-  - cover.calyps_home_volet_canape
-scenarios:           # scénarios proposés (vide ou absent = tous)
-  - summer
-  - winter
-```
+### Services
 
-L'éditeur visuel permet aussi de réordonner les volets avec les boutons ▲ ▼. Les façades suivent l'ordre choisi :
-celle dont le premier volet vient en tête passe en premier.
+| Service | Role |
+|---|---|
+| `protocole_alarme.exporter_regles` | Returns all rules (service response): backup, copy to another installation |
+| `protocole_alarme.importer_regles` | Adds a list of rules (`regles`), or replaces all rules (`remplacer: true`). Everything is checked before saving: one invalid rule and nothing is changed |
 
-![Carte Lovelace](docs/screenshots/carte-facades.png)
+These services are reserved to administrators (and to Home Assistant automations or scripts).
 
-La case **Façades repliables**, en bas de la carte, permet de replier ou déplier les volets d'une façade d'un clic
-sur son bandeau. Le choix est mémorisé dans le navigateur (propre à chaque appareil).
+### Security
 
-![Carte Lovelace, façades repliées](docs/screenshots/carte-facades-repliees.png)
+- Creating, editing, duplicating, deleting and testing rules from the panel: **administrators and people allowed** by an administrator (checked server-side). Other users see rules read-only.
+- **Advanced mode** (free YAML script) and the **list of allowed people** stay reserved to administrators: a free script can call any service. An allowed person can rename, test or switch back to simple mode an existing advanced rule, without changing its script.
+- In simple mode, a rule can only call the actions provided for each entity type, `notify.*` services and notification entities: no arbitrary service call.
+- Notification messages are Home Assistant templates (syntax checked when saving): they can show the state of any entity. Only allow trusted people to change rules.
+- Advanced mode runs a Home Assistant script with the same rights as a script created by an administrator; the YAML is parsed safely and checked by Home Assistant before saving.
+- Entity, rule and service IDs are validated, displayed text is escaped, sizes are bounded (100 rules, 50 actions per rule, 20 actions on failure, 100 steps per advanced script, 50 log lines).
+- Actions started by a test are linked to the user who started it, and those started by the alarm to the alarm state change (logbook).
+- The card reads the alarm state and the names and results of rules that ran (read-only, for any logged-in user); arming and disarming go through the alarm services, with the user's rights. The code is never stored.
+- Restoring on disarming only accepts entities whose state can be replayed (lights, switches, covers, thermostats…) and only their state and a few useful settings; **locks are excluded** so a door is never unlocked automatically. The saved state is read back and checked at startup.
+- Like any Home Assistant entity, the “Protocol enabled” switch, rule switches and “Test” buttons can be used by every user and by exposed voice assistants; limit their exposure if needed.
 
-![Carte Lovelace, une façade dépliée](docs/screenshots/carte-facades-repliables.png)
+### Limitations
 
-![Éditeur visuel de la carte](docs/screenshots/carte-editeur.png)
+- A single alarm is followed.
+- Conditions compare an entity's exact state (no numeric threshold); use advanced mode for more complex cases.
+- Lights Simulator is driven through its “Mode” select; it must be installed and set up separately.
+- The critical notification uses Home Assistant mobile app settings; notification entities (Telegram…) receive a normal message.
+- The rule type is guessed from the actions (e.g. a switch that drives lights is filed under “Other”): change it in the summary if needed.
+- Restoring a **master switch** (one that turns several lights on or off) turns them all back on: list the lights one by one instead.
+- Restoring replays the state from before arming, even if the entity was changed in the meantime. If the alarm is disarmed while Home Assistant is stopped or while the protocol is paused, nothing is restored and the saved state is dropped.
 
-Les captures utilisent des données de démonstration.
+## Licence / License
 
-## Droits des utilisateurs
-
-Les droits suivent ceux de Home Assistant : le panneau de gestion est réservé aux administrateurs. La
-carte Lovelace est visible de tous, mais changer le mode ou le scénario, mettre en pause ou reprendre
-un volet demande le droit de contrôle sur l'entité correspondante (`select.volets_mode`,
-`select.volets_scenario`, le volet lui-même), comme pour n'importe quel appel de service.
-
-## Plage active
-
-La plage active va d'une heure de début à une heure de fin (fixe, lue dans une entité, ou relative
-au coucher du soleil). Si la fin est avant le début, la plage passe minuit (ex. 20:00 → 02:00).
-Si l'entité de fin est indisponible, l'heure de fin fixe sert de repli.
-
-## Inspirations et différences
-
-Le projet reprend la logique de l'automatisation « VOLETS : Thermique » de son auteur (exposition
-prévue par orientation, températures par pièce, seuils, plage jusqu'à l'heure de remontée) et
-s'inspire des idées du projet [CoverAutomatic](https://github.com/crandler/CoverAutomatic)
-(hystérésis, pause après action manuelle, fenêtre ouverte, vent, délai de démarrage, scénarios).
-Aucun code n'a été copié.
-
-## Limites connues
-
-- Les statuts `shaded` et les pauses se basent sur la position rapportée par le volet. Un volet
-  qui ne rapporte aucune position est géré en tout ou rien.
-- Avec le mode « bouton » (position favorite), la position atteinte peut différer de la position de
-  protection réglée : l'intégration reconnaît quand même un volet qu'elle a abaissé et le remonte ensuite.
-- Si l'intégration abaisse un volet à 10 % et que vous le fermez ensuite complètement, elle l'abandonne : il reste fermé.
-- Un mouvement venant d'une autre automatisation (alarme, fermeture du soir) pendant la plage active
-  est traité comme une action manuelle et met le volet en pause.
-
-## Développement
-
-```bash
-pip install ruff
-ruff check .
-```
-
-Le moteur de décision (`engine.py`) et la validation (`schema.py`) n'importent pas Home Assistant
-et peuvent être importés seuls. Le frontend (`frontend/`) est en JavaScript pur, sans étape de build.
-Le contrat de données entre frontend et backend est décrit dans `docs/API.md`.
-
-Les plages d'ensoleillement affichées sont théoriques (géométrie seule, sans météo).
-
-Licence MIT.
+MIT
