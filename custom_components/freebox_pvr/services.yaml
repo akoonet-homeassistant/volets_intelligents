@@ -1,0 +1,228 @@
+record:
+  fields:
+    entity_id:
+      example: sensor.programme_tnt_fr_tf1
+      selector:
+        entity:
+          integration: programme_tnt_fr
+          domain: sensor
+    slot:
+      default: current
+      selector:
+        select:
+          translation_key: slot
+          options:
+            - current
+            - next
+            - prime_time
+            - second_part
+    channel_name:
+      example: "France 2"
+      selector:
+        text:
+    channel_uuid:
+      example: "uuid-webtv-201"
+      selector:
+        text:
+    title:
+      example: "Le film du dimanche"
+      selector:
+        text:
+    subtitle:
+      selector:
+        text:
+    start:
+      example: "2026-11-23T21:10:00+01:00"
+      selector:
+        datetime:
+    end:
+      example: "2026-11-23T22:55:00+01:00"
+      selector:
+        datetime:
+    end_time:
+      example: "00:45"
+      selector:
+        time:
+    repeat_weekly:
+      default: false
+      selector:
+        boolean:
+    margin_before:
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: min
+          mode: box
+    margin_after:
+      selector:
+        number:
+          min: 0
+          max: 120
+          unit_of_measurement: min
+          mode: box
+    quality:
+      selector:
+        select:
+          translation_key: quality
+          options:
+            - auto
+            - hd
+            - sd
+            - ld
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+cancel:
+  fields:
+    record_id:
+      example: 63
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    entity_id:
+      example: sensor.programme_tnt_fr_tf1
+      selector:
+        entity:
+          integration: programme_tnt_fr
+          domain: sensor
+    slot:
+      default: current
+      selector:
+        select:
+          translation_key: slot
+          options:
+            - current
+            - next
+            - prime_time
+            - second_part
+    channel_name:
+      selector:
+        text:
+    channel_uuid:
+      selector:
+        text:
+    start:
+      selector:
+        datetime:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+stop_repeat:
+  fields:
+    repeat_id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    cancel_scheduled:
+      default: false
+      selector:
+        boolean:
+    keep_record_id:
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+refresh_channels:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+pause_record:
+  fields:
+    record_id:
+      required: true
+      example: 63
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+resume_record:
+  fields:
+    record_id:
+      required: true
+      example: 63
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+stop_record:
+  fields:
+    record_id:
+      required: true
+      example: 63
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+delete_finished:
+  fields:
+    record_id:
+      required: true
+      example: 12
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          mode: box
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+pause_repeat:
+  fields:
+    repeat_id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr
+
+resume_repeat:
+  fields:
+    repeat_id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: freebox_pvr

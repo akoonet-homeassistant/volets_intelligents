@@ -1,5 +1,8 @@
 {
-  "name": "Volets Intelligents",
+  "name": "Freebox PVR",
+  "homeassistant": "2025.2.0",
   "render_readme": true,
-  "homeassistant": "2026.3.0"
+  "country": [
+    "FR"
+  ]
 }
