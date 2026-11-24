@@ -1,1 +1,5 @@
-
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation (README)
+    url: https://github.com/akoonet-homeassistant/freebox_pvr#readme
+    about: Installation, configuration, services et sécurité · Installation, setup, services and security
