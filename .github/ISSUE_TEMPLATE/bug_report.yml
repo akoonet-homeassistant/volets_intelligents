@@ -1,0 +1,49 @@
+name: 🐞 Bug / Problème
+description: Signaler un problème · Report a problem
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler un problème. Vous pouvez écrire en français ou en anglais.
+        Thanks for taking the time to report a problem. You can write in French or English.
+  - type: input
+    id: version
+    attributes:
+      label: Version de Freebox PVR · Freebox PVR version
+      placeholder: "2026.11.1"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Version de Home Assistant · Home Assistant version
+      placeholder: "2026.11.2"
+    validations:
+      required: true
+  - type: input
+    id: freebox
+    attributes:
+      label: Modèle de Freebox · Freebox model
+      placeholder: "Revolution, Delta, Pop, Ultra…"
+    validations:
+      required: true
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Ce qui se passe · What happens
+      description: Décrivez le problème et ce que vous attendiez · Describe the problem and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: appel
+    attributes:
+      label: Appel du service · Service call
+      description: Le YAML de l'action freebox_pvr.record ou cancel · The YAML of the freebox_pvr.record or cancel action
+      render: yaml
+  - type: textarea
+    id: journal
+    attributes:
+      label: Journal · Logs
+      description: Journaux de Home Assistant (freebox_pvr, freebox_api). Retirez ce qui est personnel · Home Assistant logs (freebox_pvr, freebox_api). Remove anything personal
+      render: text
